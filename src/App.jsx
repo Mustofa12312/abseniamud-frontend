@@ -12,6 +12,7 @@ import AdminDashboard from "./pages/admin/AdminDashboard"
 import Monitoring from "./pages/admin/Monitoring"
 import LocationMaster from "./pages/admin/LocationMaster"
 import RoomMaster from "./pages/admin/RoomMaster"
+import AcademicYearMaster from "./pages/admin/AcademicYearMaster"
 import FacultyMaster from "./pages/admin/FacultyMaster"
 import CourseMaster from "./pages/admin/CourseMaster"
 
@@ -50,6 +51,7 @@ function App() {
             <Route index element={<AdminDashboard />} />
             <Route path="monitoring" element={<Monitoring />} />
             <Route path="users" element={<UserMaster />} />
+            <Route path="academic-years" element={<AcademicYearMaster />} />
             <Route path="locations" element={<LocationMaster />} />
             <Route path="rooms" element={<RoomMaster />} />
             <Route path="faculties" element={<FacultyMaster />} />

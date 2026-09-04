@@ -29,6 +29,7 @@ export default function AdminLayout() {
     {
       title: "Data Master",
       items: [
+        { icon: CalendarDays, label: "Tahun Akademik", path: "/admin/academic-years" },
         { icon: UserCheck, label: "Pengguna & Hak Akses", path: "/admin/users" },
         { icon: Users, label: "Data Dosen", path: "/admin/lecturers" },
         { icon: MapPin, label: "Master Lokasi", path: "/admin/locations" },

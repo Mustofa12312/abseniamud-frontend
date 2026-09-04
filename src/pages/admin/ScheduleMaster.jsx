@@ -14,6 +14,7 @@ export default function ScheduleMaster() {
   const [rooms, setRooms] = useState([])
   const [faculties, setFaculties] = useState([])
   const [courses, setCourses] = useState([])
+  const [activeAcademicYear, setActiveAcademicYear] = useState(null)
   const [loading, setLoading] = useState(true)
   
   const days = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu']
@@ -40,16 +41,18 @@ export default function ScheduleMaster() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [schedRes, lectRes, roomRes, facRes] = await Promise.all([
+        const [schedRes, lectRes, roomRes, facRes, ayRes] = await Promise.all([
           adminService.getSchedules(),
           adminService.getLecturers(),
           adminService.getRooms(),
-          adminService.getFaculties()
+          adminService.getFaculties(),
+          adminService.getActiveAcademicYear()
         ])
         if (schedRes.success) setSchedules(schedRes.data)
         if (lectRes.success) setLecturers(lectRes.data)
         if (roomRes.success) setRooms(roomRes.data)
         if (facRes.success) setFaculties(facRes.data)
+        if (ayRes && ayRes.success && ayRes.data) setActiveAcademicYear(ayRes.data)
       } catch (err) {
         console.error("Failed to load data", err)
       } finally {
@@ -174,13 +177,27 @@ export default function ScheduleMaster() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold tracking-tight text-slate-800">Jadwal Mengajar</h2>
+          <h2 className="text-2xl font-bold tracking-tight text-slate-800 flex items-center gap-2">
+            Jadwal Mengajar
+            {activeAcademicYear && (
+              <Badge variant="outline" className={activeAcademicYear.term === 'Ganjil' ? 'bg-amber-50 text-amber-700 border-amber-200' : 'bg-blue-50 text-blue-700 border-blue-200'}>
+                {activeAcademicYear.name} ({activeAcademicYear.term})
+              </Badge>
+            )}
+          </h2>
           <p className="text-slate-500 mt-1">Kelola plotting jadwal dosen dan ruangan kelas.</p>
         </div>
-        <Button onClick={handleOpenCreate} className="flex items-center gap-2">
+        <Button onClick={handleOpenCreate} className="flex items-center gap-2" disabled={!activeAcademicYear}>
           <Plus size={18} /> Tambah Jadwal
         </Button>
       </div>
+
+      {!activeAcademicYear && !loading && (
+        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex gap-3 text-amber-700">
+          <BookOpen className="shrink-0" />
+          <p className="text-sm font-medium">Belum ada Tahun Akademik yang aktif. Silakan atur di menu <strong>Tahun Akademik</strong> terlebih dahulu agar dapat membuat jadwal.</p>
+        </div>
+      )}
 
       <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
         {days.map((day) => (
@@ -273,9 +290,10 @@ export default function ScheduleMaster() {
                       onChange={(e) => setSelectedSemester(e.target.value)}
                       className="flex h-10 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-500"
                     >
-                      {[1,2,3,4,5,6,7,8].map(s => (
-                        <option key={s} value={s}>Semester {s}</option>
-                      ))}
+                      {activeAcademicYear?.term === 'Ganjil' 
+                        ? [1,3,5,7].map(s => <option key={s} value={s}>Semester {s} (Ganjil)</option>)
+                        : [2,4,6,8].map(s => <option key={s} value={s}>Semester {s} (Genap)</option>)
+                      }
                     </select>
                   </div>
                 </div>
