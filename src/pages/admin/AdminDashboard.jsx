@@ -2,6 +2,7 @@ import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/Card"
 import { Users, UserCheck, Clock, Map, MapPin } from "lucide-react"
 import { adminService } from "../../services/admin"
+import { EmptyState } from "../../components/ui/EmptyState"
 
 export default function AdminDashboard() {
   const [stats, setStats] = useState([])
@@ -108,7 +109,12 @@ export default function AdminDashboard() {
               {loading ? (
                 <div className="text-center text-sm text-slate-500">Memuat aktivitas...</div>
               ) : recentActivity.length === 0 ? (
-                <div className="text-center text-sm text-slate-500 py-4">Belum ada aktivitas hari ini.</div>
+                <div className="h-48 flex items-center justify-center">
+                  <EmptyState 
+                    title="Tidak Ada Aktivitas" 
+                    description="Belum ada aktivitas presensi pada hari ini." 
+                  />
+                </div>
               ) : (
                 recentActivity.map((activity, i) => (
                   <div key={i} className="flex gap-4">

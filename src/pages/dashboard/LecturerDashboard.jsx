@@ -5,13 +5,14 @@ import { Card, CardContent } from "../../components/ui/Card"
 import { useAuth } from "../../contexts/AuthContext"
 import { useGeolocation } from "../../hooks/useGeolocation"
 import { attendanceService } from "../../services/attendance"
+import { useToast } from "../../contexts/ToastContext"
 
 export default function LecturerDashboard() {
+  const { success, error } = useToast()
   const [time, setTime] = useState(new Date())
   const { user } = useAuth()
   const { coordinates, loading: locationLoading, error: locationError, requestLocation } = useGeolocation()
   const [attendanceLoading, setAttendanceLoading] = useState(false)
-  const [statusMessage, setStatusMessage] = useState("")
 
   // Real-time clock update
   useEffect(() => {
@@ -22,22 +23,21 @@ export default function LecturerDashboard() {
   const handleCheckIn = async () => {
     try {
       setAttendanceLoading(true)
-      setStatusMessage("")
       
       const coords = await requestLocation()
       const res = await attendanceService.checkIn(coords)
       
       if (res.success) {
-        setStatusMessage("Check-in Berhasil!")
+        success("Check-in Berhasil!")
         // Update local state if needed
       }
     } catch (err) {
       if (err.response && err.response.data && err.response.data.message) {
-        setStatusMessage(err.response.data.message)
+        error(err.response.data.message)
       } else if (typeof err === 'string') {
-        setStatusMessage(err) // From useGeolocation
+        error(err) // From useGeolocation
       } else {
-        setStatusMessage("Gagal melakukan Check-in.")
+        error("Gagal melakukan Check-in.")
       }
     } finally {
       setAttendanceLoading(false)
@@ -48,21 +48,20 @@ export default function LecturerDashboard() {
     // Similar logic for check out
     try {
       setAttendanceLoading(true)
-      setStatusMessage("")
       
       const coords = await requestLocation()
       const res = await attendanceService.checkOut(coords)
       
       if (res.success) {
-        setStatusMessage("Check-out Berhasil!")
+        success("Check-out Berhasil!")
       }
     } catch (err) {
       if (err.response && err.response.data && err.response.data.message) {
-        setStatusMessage(err.response.data.message)
+        error(err.response.data.message)
       } else if (typeof err === 'string') {
-        setStatusMessage(err) // From useGeolocation
+        error(err) // From useGeolocation
       } else {
-        setStatusMessage("Gagal melakukan Check-out.")
+        error("Gagal melakukan Check-out.")
       }
     } finally {
       setAttendanceLoading(false)
@@ -101,13 +100,6 @@ export default function LecturerDashboard() {
           </div>
         </CardContent>
       </Card>
-
-      {/* Status Messages */}
-      {statusMessage && (
-         <div className={`p-4 rounded-xl text-sm font-medium ${statusMessage.includes('Berhasil') ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}`}>
-           {statusMessage}
-         </div>
-      )}
 
       {/* Action Buttons */}
       <div className="grid grid-cols-2 gap-4">

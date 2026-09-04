@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/Ca
 import { Badge } from "../../components/ui/Badge"
 import { ShieldCheck, Clock, Activity, User, Monitor } from "lucide-react"
 import { adminService } from "../../services/admin"
+import { EmptyState } from "../../components/ui/EmptyState"
 
 export default function AuditLogMaster() {
   const [logs, setLogs] = useState([])
@@ -98,9 +99,11 @@ export default function AuditLogMaster() {
               ))}
             </div>
           ) : (
-            <div className="p-12 text-center text-slate-400 flex flex-col items-center justify-center">
-              <ShieldCheck size={48} className="text-slate-200 mb-3" />
-              <p>Belum ada rekaman aktivitas keamanan.</p>
+            <div className="h-64 flex items-center justify-center">
+              <EmptyState 
+                title="Log Kosong" 
+                description="Belum ada rekaman aktivitas keamanan." 
+              />
             </div>
           )}
         </CardContent>

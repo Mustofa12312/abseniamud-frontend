@@ -4,8 +4,11 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from ".
 import { Button } from "../../components/ui/Button"
 import { Download, FileSpreadsheet, Calendar as CalendarIcon, Filter } from "lucide-react"
 import { adminService } from "../../services/admin"
+import { useToast } from "../../contexts/ToastContext"
+import { EmptyState } from "../../components/ui/EmptyState"
 
 export default function ReportMaster() {
+  const { error } = useToast()
   const [reports, setReports] = useState([])
   const [periodStr, setPeriodStr] = useState("")
   const [loading, setLoading] = useState(true)
@@ -35,7 +38,7 @@ export default function ReportMaster() {
 
   const handleExportCSV = () => {
     if (reports.length === 0) {
-      alert("Tidak ada data untuk diekspor pada periode ini.")
+      error("Tidak ada data untuk diekspor pada periode ini.")
       return
     }
 
@@ -74,7 +77,7 @@ export default function ReportMaster() {
 
   const handleExportPDF = () => {
     if (reports.length === 0) {
-      alert("Tidak ada data untuk diekspor pada periode ini.")
+      error("Tidak ada data untuk diekspor pada periode ini.")
       return
     }
     
@@ -209,8 +212,13 @@ export default function ReportMaster() {
                 </TableRow>
               ) : reports.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center text-slate-500 h-32">
-                    Belum ada data presensi untuk periode ini.
+                  <TableCell colSpan={6} className="h-48">
+                    <div className="flex items-center justify-center h-full">
+                      <EmptyState 
+                        title="Belum Ada Data" 
+                        description="Belum ada data presensi untuk periode ini." 
+                      />
+                    </div>
                   </TableCell>
                 </TableRow>
               ) : (

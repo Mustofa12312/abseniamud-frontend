@@ -3,10 +3,13 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../..
 import { Button } from "../../components/ui/Button"
 import { Input } from "../../components/ui/Input"
 import { Badge } from "../../components/ui/Badge"
-import { Calendar as CalendarIcon, Clock, Send, AlertCircle, FileText } from "lucide-react"
+import { Calendar as CalendarIcon, Clock, Send, FileText } from "lucide-react"
 import { attendanceService } from "../../services/attendance"
+import { useToast } from "../../contexts/ToastContext"
+import { EmptyState } from "../../components/ui/EmptyState"
 
 export default function LecturerCorrection() {
+  const { success, error } = useToast()
   const [corrections, setCorrections] = useState([])
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
@@ -15,7 +18,6 @@ export default function LecturerCorrection() {
     type: 'Lupa Check-in',
     reason: ''
   })
-  const [message, setMessage] = useState(null)
 
   const fetchCorrections = async () => {
     try {
@@ -41,16 +43,15 @@ export default function LecturerCorrection() {
   const handleSubmit = async (e) => {
     e.preventDefault()
     setSubmitting(true)
-    setMessage(null)
     try {
       const res = await attendanceService.submitCorrection(formData)
       if (res.success) {
-        setMessage({ type: 'success', text: res.message })
+        success(res.message || "Pengajuan koreksi berhasil dikirim.")
         setFormData({ date: '', type: 'Lupa Check-in', reason: '' })
         fetchCorrections()
       }
     } catch (err) {
-      setMessage({ type: 'error', text: err.response?.data?.message || 'Terjadi kesalahan' })
+      error(err.response?.data?.message || 'Terjadi kesalahan')
     } finally {
       setSubmitting(false)
     }
@@ -82,13 +83,6 @@ export default function LecturerCorrection() {
           </CardHeader>
           <CardContent className="pt-4">
             <form onSubmit={handleSubmit} className="space-y-4">
-              {message && (
-                <div className={`p-3 rounded-lg text-sm flex items-start gap-2 ${message.type === 'success' ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'}`}>
-                  <AlertCircle size={16} className="mt-0.5 shrink-0" />
-                  <span>{message.text}</span>
-                </div>
-              )}
-              
               <div className="space-y-1.5">
                 <label className="text-sm font-medium text-slate-700">Tanggal</label>
                 <Input 
@@ -171,9 +165,11 @@ export default function LecturerCorrection() {
                 ))}
               </div>
             ) : (
-              <div className="p-12 text-center text-slate-400 flex flex-col items-center justify-center">
-                <FileText size={48} className="text-slate-200 mb-3" />
-                <p>Belum ada riwayat pengajuan koreksi.</p>
+              <div className="h-48 flex items-center justify-center">
+                <EmptyState 
+                  title="Belum Ada Riwayat" 
+                  description="Belum ada riwayat pengajuan koreksi yang Anda buat." 
+                />
               </div>
             )}
           </CardContent>

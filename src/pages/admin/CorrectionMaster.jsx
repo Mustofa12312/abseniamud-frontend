@@ -5,6 +5,7 @@ import { Button } from "../../components/ui/Button"
 import { Check, X, Clock, AlertCircle, FileText, Calendar as CalendarIcon, User } from "lucide-react"
 import { adminService } from "../../services/admin"
 import { useToast } from "../../contexts/ToastContext"
+import { EmptyState } from "../../components/ui/EmptyState"
 
 export default function CorrectionMaster() {
   const { success, error } = useToast()
@@ -139,10 +140,11 @@ export default function CorrectionMaster() {
                 ))}
               </div>
             ) : (
-              <div className="p-12 text-center text-slate-400 flex flex-col items-center justify-center">
-                <Check size={48} className="text-emerald-200 mb-3" />
-                <h3 className="text-lg font-medium text-slate-600">Semua Bersih!</h3>
-                <p>Tidak ada pengajuan koreksi presensi saat ini.</p>
+              <div className="h-64 flex items-center justify-center">
+                <EmptyState 
+                  title="Semua Bersih!" 
+                  description="Tidak ada pengajuan koreksi presensi saat ini." 
+                />
               </div>
             )}
           </CardContent>

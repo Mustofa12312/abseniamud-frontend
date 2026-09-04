@@ -3,6 +3,7 @@ import { CalendarDays, Clock, MapPin } from "lucide-react"
 import { Card, CardContent } from "../../components/ui/Card"
 import { Badge } from "../../components/ui/Badge"
 import { attendanceService } from "../../services/attendance"
+import { EmptyState } from "../../components/ui/EmptyState"
 
 export default function LecturerHistory() {
   const [history, setHistory] = useState([])
@@ -51,7 +52,12 @@ export default function LecturerHistory() {
             <Card key={i} className="animate-pulse border-none shadow-sm h-32 bg-slate-100" />
           ))
         ) : history.length === 0 ? (
-          <div className="text-center py-10 text-slate-500">Belum ada riwayat presensi.</div>
+          <div className="h-64">
+            <EmptyState 
+              title="Tidak Ada Riwayat" 
+              description="Belum ada riwayat presensi dalam rentang waktu ini." 
+            />
+          </div>
         ) : (
           history.map((record) => (
             <Card key={record.id} className="border-none shadow-sm overflow-hidden relative">
