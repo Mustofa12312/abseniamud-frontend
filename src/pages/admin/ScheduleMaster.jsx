@@ -5,8 +5,10 @@ import { Button } from "../../components/ui/Button"
 import { Input } from "../../components/ui/Input"
 import { Clock, Plus, BookOpen, MapPin, Edit2, Trash2 } from "lucide-react"
 import { adminService } from "../../services/admin"
+import { useToast } from "../../contexts/ToastContext"
 
 export default function ScheduleMaster() {
+  const { success, error } = useToast()
   const [schedules, setSchedules] = useState({})
   const [loading, setLoading] = useState(true)
   
@@ -89,6 +91,7 @@ export default function ScheduleMaster() {
           
           setSchedules(newSchedules)
           setIsModalOpen(false)
+          success("Jadwal berhasil diperbarui.")
         }
       } else {
         const res = await adminService.createSchedule(formData)
@@ -99,11 +102,12 @@ export default function ScheduleMaster() {
           
           setSchedules(newSchedules)
           setIsModalOpen(false)
+          success("Jadwal berhasil ditambahkan.")
         }
       }
     } catch (err) {
       console.error(err)
-      alert("Terjadi kesalahan.")
+      error("Terjadi kesalahan.")
     } finally {
       setSubmitting(false)
     }
@@ -122,10 +126,11 @@ export default function ScheduleMaster() {
         }
         setSchedules(newSchedules)
         setIsDeleteModalOpen(false)
+        success("Jadwal berhasil dihapus.")
       }
     } catch (err) {
       console.error(err)
-      alert("Gagal menghapus.")
+      error("Gagal menghapus.")
     } finally {
       setSubmitting(false)
     }

@@ -6,8 +6,10 @@ import { Button } from "../../components/ui/Button"
 import { Input } from "../../components/ui/Input"
 import { MapPin, Plus, Edit2, Trash2 } from "lucide-react"
 import { adminService } from "../../services/admin"
+import { useToast } from "../../contexts/ToastContext"
 
 export default function LocationMaster() {
+  const { success, error } = useToast()
   const [locations, setLocations] = useState([])
   const [loading, setLoading] = useState(true)
   
@@ -83,17 +85,19 @@ export default function LocationMaster() {
         if (res.success) {
           setLocations(locations.map(l => l.id === editingLocation.id ? res.data : l))
           setIsModalOpen(false)
+          success("Lokasi berhasil diperbarui.")
         }
       } else {
         const res = await adminService.createLocation(formattedData)
         if (res.success) {
           setLocations([...locations, res.data])
           setIsModalOpen(false)
+          success("Lokasi berhasil ditambahkan.")
         }
       }
     } catch (err) {
       console.error(err)
-      alert("Terjadi kesalahan.")
+      error("Terjadi kesalahan.")
     } finally {
       setSubmitting(false)
     }
@@ -108,10 +112,11 @@ export default function LocationMaster() {
       if (res.success) {
         setLocations(locations.filter(l => l.id !== deletingLocation.id))
         setIsDeleteModalOpen(false)
+        success("Lokasi berhasil dihapus.")
       }
     } catch (err) {
       console.error(err)
-      alert("Gagal menghapus.")
+      error("Gagal menghapus.")
     } finally {
       setSubmitting(false)
     }

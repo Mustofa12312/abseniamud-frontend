@@ -1,5 +1,6 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom"
 import { AuthProvider } from "./contexts/AuthContext"
+import { ToastProvider } from "./contexts/ToastContext"
 import AuthLayout from "./layouts/AuthLayout"
 import Login from "./pages/auth/Login"
 import LecturerLayout from "./layouts/LecturerLayout"
@@ -23,7 +24,8 @@ import UserMaster from "./pages/admin/UserMaster"
 function App() {
   return (
     <AuthProvider>
-      <Router>
+      <ToastProvider>
+        <Router>
         <Routes>
           <Route path="/" element={<Navigate to="/login" replace />} />
           
@@ -55,6 +57,7 @@ function App() {
           </Route>
         </Routes>
       </Router>
+      </ToastProvider>
     </AuthProvider>
   )
 }

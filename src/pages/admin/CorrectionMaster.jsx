@@ -4,8 +4,10 @@ import { Badge } from "../../components/ui/Badge"
 import { Button } from "../../components/ui/Button"
 import { Check, X, Clock, AlertCircle, FileText, Calendar as CalendarIcon, User } from "lucide-react"
 import { adminService } from "../../services/admin"
+import { useToast } from "../../contexts/ToastContext"
 
 export default function CorrectionMaster() {
+  const { success, error } = useToast()
   const [corrections, setCorrections] = useState([])
   const [loading, setLoading] = useState(true)
 
@@ -32,15 +34,17 @@ export default function CorrectionMaster() {
         const res = await adminService.approveCorrection(id)
         if (res.success) {
           setCorrections(corrections.map(c => c.id === id ? { ...c, status: 'APPROVED' } : c))
+          success("Pengajuan berhasil disetujui.")
         }
       } else {
         const res = await adminService.rejectCorrection(id)
         if (res.success) {
           setCorrections(corrections.map(c => c.id === id ? { ...c, status: 'REJECTED' } : c))
+          success("Pengajuan berhasil ditolak.")
         }
       }
     } catch (err) {
-      alert("Gagal memproses pengajuan.")
+      error(err.response?.data?.message || "Gagal memproses pengajuan.")
       console.error(err)
     }
   }

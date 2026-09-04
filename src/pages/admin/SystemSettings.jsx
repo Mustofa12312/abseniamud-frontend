@@ -2,13 +2,14 @@ import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../../components/ui/Card"
 import { Button } from "../../components/ui/Button"
 import { Input } from "../../components/ui/Input"
-import { Settings, Save, AlertCircle, Clock, Map, Building2 } from "lucide-react"
+import { Settings, Save, Clock, Map, Building2 } from "lucide-react"
 import { adminService } from "../../services/admin"
+import { useToast } from "../../contexts/ToastContext"
 
 export default function SystemSettings() {
+  const { success, error } = useToast()
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
-  const [message, setMessage] = useState(null)
   
   const [formData, setFormData] = useState({
     app_name: 'IAIMU Attendance',
@@ -45,14 +46,13 @@ export default function SystemSettings() {
   const handleSubmit = async (e) => {
     e.preventDefault()
     setSaving(true)
-    setMessage(null)
     try {
       const res = await adminService.updateSettings(formData)
       if (res.success) {
-        setMessage({ type: 'success', text: res.message })
+        success(res.message || "Pengaturan berhasil disimpan.")
       }
     } catch (err) {
-      setMessage({ type: 'error', text: err.response?.data?.message || 'Gagal menyimpan pengaturan.' })
+      error(err.response?.data?.message || 'Gagal menyimpan pengaturan.')
     } finally {
       setSaving(false)
     }
@@ -70,13 +70,6 @@ export default function SystemSettings() {
         </h2>
         <p className="text-slate-500 mt-1">Konfigurasi parameter global yang akan berlaku untuk seluruh pengguna sistem.</p>
       </div>
-
-      {message && (
-        <div className={`p-4 rounded-lg flex items-start gap-3 ${message.type === 'success' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-rose-50 text-rose-700 border border-rose-200'}`}>
-          <AlertCircle size={20} className="shrink-0" />
-          <p className="font-medium text-sm">{message.text}</p>
-        </div>
-      )}
 
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Identitas Aplikasi */}

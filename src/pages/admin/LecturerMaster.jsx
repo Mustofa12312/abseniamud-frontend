@@ -5,8 +5,10 @@ import { Button } from "../../components/ui/Button"
 import { Input } from "../../components/ui/Input"
 import { Search, Plus, Edit2, Trash2 } from "lucide-react"
 import { adminService } from "../../services/admin"
+import { useToast } from "../../contexts/ToastContext"
 
 export default function LecturerMaster() {
+  const { success, error } = useToast()
   const [lecturers, setLecturers] = useState([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState("")
@@ -85,17 +87,19 @@ export default function LecturerMaster() {
         if (res.success) {
           setLecturers(lecturers.map(l => l.id === editingLecturer.id ? { ...l, ...formattedData } : l))
           setIsModalOpen(false)
+          success("Data dosen berhasil diperbarui.")
         }
       } else {
         const res = await adminService.createLecturer(formattedData)
         if (res.success) {
           setLecturers([...lecturers, res.data])
           setIsModalOpen(false)
+          success("Data dosen berhasil ditambahkan.")
         }
       }
     } catch (err) {
       console.error(err)
-      alert("Terjadi kesalahan.")
+      error("Terjadi kesalahan.")
     } finally {
       setSubmitting(false)
     }
@@ -110,10 +114,11 @@ export default function LecturerMaster() {
       if (res.success) {
         setLecturers(lecturers.filter(l => l.id !== deletingLecturer.id))
         setIsDeleteModalOpen(false)
+        success("Dosen berhasil dihapus.")
       }
     } catch (err) {
       console.error(err)
-      alert("Gagal menghapus.")
+      error("Gagal menghapus.")
     } finally {
       setSubmitting(false)
     }

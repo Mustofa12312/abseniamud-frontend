@@ -5,8 +5,10 @@ import { Input } from "../../components/ui/Input"
 import { Badge } from "../../components/ui/Badge"
 import { Users, Plus, Pencil, Trash2, Search, UserCheck } from "lucide-react"
 import { adminService } from "../../services/admin"
+import { useToast } from "../../contexts/ToastContext"
 
 export default function UserMaster() {
+  const { success, error } = useToast()
   const [users, setUsers] = useState([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
@@ -48,16 +50,18 @@ export default function UserMaster() {
         const res = await adminService.updateUser(editingUser.id, formData)
         if (res.success) {
           setUsers(users.map(u => u.id === editingUser.id ? { ...u, ...formData } : u))
+          success("Pengguna berhasil diperbarui.")
         }
       } else {
         const res = await adminService.createUser(formData)
         if (res.success) {
           setUsers([...users, { ...res.data, created_at: new Date().toISOString().split('T')[0] }])
+          success("Pengguna berhasil ditambahkan.")
         }
       }
       setIsModalOpen(false)
     } catch (err) {
-      alert("Terjadi kesalahan, periksa form Anda.")
+      error(err.response?.data?.message || "Terjadi kesalahan, periksa form Anda.")
     }
   }
 
@@ -84,9 +88,10 @@ export default function UserMaster() {
         const res = await adminService.deleteUser(id)
         if (res.success) {
           setUsers(users.filter(u => u.id !== id))
+          success("Pengguna berhasil dihapus.")
         }
       } catch (err) {
-        alert(err.response?.data?.message || "Gagal menghapus.")
+        error(err.response?.data?.message || "Gagal menghapus.")
       }
     }
   }
