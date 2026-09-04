@@ -169,5 +169,27 @@ export const adminService = {
   deleteCourse: async (id) => {
     const response = await api.delete(`/admin/courses/${id}`);
     return response.data;
+  },
+
+  // Academic Years
+  getAcademicYears: async () => {
+    const response = await api.get('/admin/academic-years');
+    return response.data;
+  },
+  getActiveAcademicYear: async () => {
+    const response = await api.get('/admin/academic-years/active');
+    return response.data;
+  },
+  createAcademicYear: async (data) => {
+    const response = await api.post('/admin/academic-years', data);
+    return response.data;
+  },
+  updateAcademicYear: async (id, data) => {
+    const response = await api.put(`/admin/academic-years/${id}`, data);
+    return response.data;
+  },
+  deleteAcademicYear: async (id) => {
+    const response = await api.delete(`/admin/academic-years/${id}`);
+    return response.data;
   }
 };
