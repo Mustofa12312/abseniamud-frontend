@@ -10,6 +10,7 @@ import { useToast } from "../../contexts/ToastContext"
 export default function ScheduleMaster() {
   const { success, error } = useToast()
   const [schedules, setSchedules] = useState({})
+  const [lecturers, setLecturers] = useState([])
   const [loading, setLoading] = useState(true)
   
   const days = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat']
@@ -30,19 +31,25 @@ export default function ScheduleMaster() {
   })
 
   useEffect(() => {
-    const fetchSchedules = async () => {
+    const fetchData = async () => {
       try {
-        const res = await adminService.getSchedules()
-        if (res.success) {
-          setSchedules(res.data)
+        const [schedRes, lectRes] = await Promise.all([
+          adminService.getSchedules(),
+          adminService.getLecturers()
+        ])
+        if (schedRes.success) {
+          setSchedules(schedRes.data)
+        }
+        if (lectRes.success) {
+          setLecturers(lectRes.data)
         }
       } catch (err) {
-        console.error("Failed to load schedules", err)
+        console.error("Failed to load data", err)
       } finally {
         setLoading(false)
       }
     }
-    fetchSchedules()
+    fetchData()
   }, [])
 
   const handleOpenCreate = () => {
@@ -240,13 +247,18 @@ export default function ScheduleMaster() {
                 </div>
                 <div className="space-y-1.5">
                   <label className="text-sm font-medium text-slate-700">Nama Dosen</label>
-                  <Input 
-                    type="text" 
+                  <select 
                     name="lecturer" 
                     value={formData.lecturer} 
                     onChange={handleChange} 
-                    required 
-                  />
+                    required
+                    className="flex h-10 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-500"
+                  >
+                    <option value="" disabled>Pilih Dosen</option>
+                    {lecturers.map(l => (
+                      <option key={l.id} value={l.name}>{l.name}</option>
+                    ))}
+                  </select>
                 </div>
                 <div className="space-y-1.5">
                   <label className="text-sm font-medium text-slate-700">Ruangan</label>
