@@ -14,7 +14,7 @@ export default function ScheduleMaster() {
   const [rooms, setRooms] = useState([])
   const [loading, setLoading] = useState(true)
   
-  const days = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat']
+  const days = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu']
 
   // Modal state
   const [isModalOpen, setIsModalOpen] = useState(false)
