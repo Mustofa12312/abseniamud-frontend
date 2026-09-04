@@ -11,6 +11,7 @@ export default function ScheduleMaster() {
   const { success, error } = useToast()
   const [schedules, setSchedules] = useState({})
   const [lecturers, setLecturers] = useState([])
+  const [rooms, setRooms] = useState([])
   const [loading, setLoading] = useState(true)
   
   const days = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat']
@@ -33,16 +34,14 @@ export default function ScheduleMaster() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [schedRes, lectRes] = await Promise.all([
+        const [schedRes, lectRes, roomRes] = await Promise.all([
           adminService.getSchedules(),
-          adminService.getLecturers()
+          adminService.getLecturers(),
+          adminService.getRooms()
         ])
-        if (schedRes.success) {
-          setSchedules(schedRes.data)
-        }
-        if (lectRes.success) {
-          setLecturers(lectRes.data)
-        }
+        if (schedRes.success) setSchedules(schedRes.data)
+        if (lectRes.success) setLecturers(lectRes.data)
+        if (roomRes.success) setRooms(roomRes.data)
       } catch (err) {
         console.error("Failed to load data", err)
       } finally {
@@ -262,13 +261,18 @@ export default function ScheduleMaster() {
                 </div>
                 <div className="space-y-1.5">
                   <label className="text-sm font-medium text-slate-700">Ruangan</label>
-                  <Input 
-                    type="text" 
+                  <select 
                     name="room" 
                     value={formData.room} 
                     onChange={handleChange} 
-                    required 
-                  />
+                    required
+                    className="flex h-10 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-500"
+                  >
+                    <option value="" disabled>Pilih Ruangan</option>
+                    {rooms.map(r => (
+                      <option key={r.id} value={r.name}>{r.name}</option>
+                    ))}
+                  </select>
                 </div>
                 
                 <div className="flex gap-3 pt-4">

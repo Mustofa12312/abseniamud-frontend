@@ -32,6 +32,7 @@ export default function AdminLayout() {
         { icon: UserCheck, label: "Pengguna & Hak Akses", path: "/admin/users" },
         { icon: Users, label: "Data Dosen", path: "/admin/lecturers" },
         { icon: MapPin, label: "Master Lokasi", path: "/admin/locations" },
+        { icon: MapPin, label: "Master Ruangan", path: "/admin/rooms" },
         { icon: CalendarDays, label: "Jadwal", path: "/admin/schedules" },
       ]
     },

@@ -110,5 +110,23 @@ export const adminService = {
   },
   deleteSchedule: async (id) => {
     return new Promise(resolve => setTimeout(() => resolve({ success: true, message: "Jadwal berhasil dihapus" }), 500));
+  },
+
+  // Rooms
+  getRooms: async () => {
+    const response = await api.get('/admin/rooms');
+    return response.data;
+  },
+  createRoom: async (data) => {
+    const response = await api.post('/admin/rooms', data);
+    return response.data;
+  },
+  updateRoom: async (id, data) => {
+    const response = await api.put(`/admin/rooms/${id}`, data);
+    return response.data;
+  },
+  deleteRoom: async (id) => {
+    const response = await api.delete(`/admin/rooms/${id}`);
+    return response.data;
   }
 };

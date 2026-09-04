@@ -11,6 +11,7 @@ import AdminLayout from "./layouts/AdminLayout"
 import AdminDashboard from "./pages/admin/AdminDashboard"
 import Monitoring from "./pages/admin/Monitoring"
 import LocationMaster from "./pages/admin/LocationMaster"
+import RoomMaster from "./pages/admin/RoomMaster"
 
 import LecturerMaster from "./pages/admin/LecturerMaster"
 import ReportMaster from "./pages/admin/ReportMaster"
@@ -48,6 +49,7 @@ function App() {
             <Route path="monitoring" element={<Monitoring />} />
             <Route path="users" element={<UserMaster />} />
             <Route path="locations" element={<LocationMaster />} />
+            <Route path="rooms" element={<RoomMaster />} />
             <Route path="lecturers" element={<LecturerMaster />} />
             <Route path="schedules" element={<ScheduleMaster />} />
             <Route path="reports" element={<ReportMaster />} />
