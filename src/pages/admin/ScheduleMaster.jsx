@@ -12,6 +12,8 @@ export default function ScheduleMaster() {
   const [schedules, setSchedules] = useState({})
   const [lecturers, setLecturers] = useState([])
   const [rooms, setRooms] = useState([])
+  const [faculties, setFaculties] = useState([])
+  const [courses, setCourses] = useState([])
   const [loading, setLoading] = useState(true)
   
   const days = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu']
@@ -30,18 +32,24 @@ export default function ScheduleMaster() {
     lecturer: '',
     room: ''
   })
+  
+  // Temporary states for form filtering
+  const [selectedFaculty, setSelectedFaculty] = useState('')
+  const [selectedSemester, setSelectedSemester] = useState('1')
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [schedRes, lectRes, roomRes] = await Promise.all([
+        const [schedRes, lectRes, roomRes, facRes] = await Promise.all([
           adminService.getSchedules(),
           adminService.getLecturers(),
-          adminService.getRooms()
+          adminService.getRooms(),
+          adminService.getFaculties()
         ])
         if (schedRes.success) setSchedules(schedRes.data)
         if (lectRes.success) setLecturers(lectRes.data)
         if (roomRes.success) setRooms(roomRes.data)
+        if (facRes.success) setFaculties(facRes.data)
       } catch (err) {
         console.error("Failed to load data", err)
       } finally {
@@ -51,9 +59,27 @@ export default function ScheduleMaster() {
     fetchData()
   }, [])
 
+  useEffect(() => {
+    const fetchCourses = async () => {
+      if (!selectedFaculty || !selectedSemester) {
+        setCourses([])
+        return
+      }
+      try {
+        const res = await adminService.getCourses(selectedFaculty, selectedSemester)
+        if (res.success) setCourses(res.data)
+      } catch (err) {
+        console.error("Failed to load courses", err)
+      }
+    }
+    fetchCourses()
+  }, [selectedFaculty, selectedSemester])
+
   const handleOpenCreate = () => {
     setEditingSchedule(null)
     setFormData({ day: 'Senin', course: '', time: '', lecturer: '', room: '' })
+    setSelectedFaculty('')
+    setSelectedSemester('1')
     setIsModalOpen(true)
   }
 
@@ -66,6 +92,8 @@ export default function ScheduleMaster() {
       lecturer: item.lecturer,
       room: item.room
     })
+    setSelectedFaculty('')
+    setSelectedSemester('1')
     setIsModalOpen(true)
   }
 
@@ -224,15 +252,54 @@ export default function ScheduleMaster() {
                     {days.map(d => <option key={d} value={d}>{d}</option>)}
                   </select>
                 </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <label className="text-sm font-medium text-slate-700">Fakultas / Prodi</label>
+                    <select 
+                      value={selectedFaculty}
+                      onChange={(e) => setSelectedFaculty(e.target.value)}
+                      className="flex h-10 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-500"
+                    >
+                      <option value="">Pilih Fakultas/Prodi</option>
+                      {faculties.map(f => (
+                        <option key={f.id} value={f.id}>{f.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-sm font-medium text-slate-700">Semester</label>
+                    <select 
+                      value={selectedSemester}
+                      onChange={(e) => setSelectedSemester(e.target.value)}
+                      className="flex h-10 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-500"
+                    >
+                      {[1,2,3,4,5,6,7,8].map(s => (
+                        <option key={s} value={s}>Semester {s}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
                 <div className="space-y-1.5">
                   <label className="text-sm font-medium text-slate-700">Mata Kuliah</label>
-                  <Input 
-                    type="text" 
+                  <select 
                     name="course" 
                     value={formData.course} 
                     onChange={handleChange} 
-                    required 
-                  />
+                    required
+                    className="flex h-10 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-500"
+                  >
+                    <option value="" disabled>
+                      {(!selectedFaculty) ? "Pilih Fakultas Dulu" : (courses.length === 0 ? "Tidak Ada MK" : "Pilih Mata Kuliah")}
+                    </option>
+                    {courses.map(c => (
+                      <option key={c.id} value={c.name}>{c.name}</option>
+                    ))}
+                    {/* Preserve existing value when editing if not in list */}
+                    {editingSchedule && formData.course && !courses.find(c => c.name === formData.course) && (
+                      <option value={formData.course}>{formData.course} (Tersimpan)</option>
+                    )}
+                  </select>
                 </div>
                 <div className="space-y-1.5">
                   <label className="text-sm font-medium text-slate-700">Waktu (contoh: 08:00 - 09:30)</label>

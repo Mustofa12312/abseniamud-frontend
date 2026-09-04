@@ -3,7 +3,7 @@ import { Outlet, useNavigate, useLocation } from "react-router-dom"
 import { motion, AnimatePresence } from "framer-motion"
 import { 
   LayoutDashboard, Users, MapPin, CalendarDays, 
-  FileText, Settings, ShieldCheck, Menu, X, Bell, UserCircle, UserCheck, LogOut
+  FileText, Settings, ShieldCheck, Menu, X, Bell, UserCircle, UserCheck, LogOut, GraduationCap, BookOpen
 } from "lucide-react"
 import { cn } from "../utils/utils"
 import ThemeToggle from "../components/ui/ThemeToggle"
@@ -33,6 +33,8 @@ export default function AdminLayout() {
         { icon: Users, label: "Data Dosen", path: "/admin/lecturers" },
         { icon: MapPin, label: "Master Lokasi", path: "/admin/locations" },
         { icon: MapPin, label: "Master Ruangan", path: "/admin/rooms" },
+        { icon: GraduationCap, label: "Fakultas / Prodi", path: "/admin/faculties" },
+        { icon: BookOpen, label: "Mata Kuliah", path: "/admin/courses" },
         { icon: CalendarDays, label: "Jadwal", path: "/admin/schedules" },
       ]
     },
