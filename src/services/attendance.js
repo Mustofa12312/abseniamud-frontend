@@ -31,6 +31,13 @@ export const attendanceService = {
     return response.data;
   },
 
+  getSummary: async (month, year) => {
+    const response = await api.get('/attendance/summary', {
+      params: { month, year }
+    });
+    return response.data;
+  },
+
   submitCorrection: async (data) => {
     const response = await api.post('/attendance/corrections', data);
     return response.data;
@@ -41,3 +48,4 @@ export const attendanceService = {
     return response.data;
   }
 };
+
