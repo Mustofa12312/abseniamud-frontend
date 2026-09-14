@@ -10,7 +10,6 @@ import { useToast } from "../../contexts/ToastContext"
 export default function ScheduleMaster() {
   const { success, error } = useToast()
   const [schedules, setSchedules] = useState({})
-  const [lecturers, setLecturers] = useState([])
   const [rooms, setRooms] = useState([])
   const [faculties, setFaculties] = useState([])
   const [courses, setCourses] = useState([])
@@ -41,15 +40,13 @@ export default function ScheduleMaster() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [schedRes, lectRes, roomRes, facRes, ayRes] = await Promise.all([
+        const [schedRes, roomRes, facRes, ayRes] = await Promise.all([
           adminService.getSchedules(),
-          adminService.getLecturers(),
           adminService.getRooms(),
           adminService.getFaculties(),
           adminService.getActiveAcademicYear()
         ])
         if (schedRes.success) setSchedules(schedRes.data)
-        if (lectRes.success) setLecturers(lectRes.data)
         if (roomRes.success) setRooms(roomRes.data)
         if (facRes.success) setFaculties(facRes.data)
         if (ayRes && ayRes.success && ayRes.data) setActiveAcademicYear(ayRes.data)
@@ -103,6 +100,17 @@ export default function ScheduleMaster() {
   const handleOpenDelete = (day, item) => {
     setDeletingSchedule({ ...item, day })
     setIsDeleteModalOpen(true)
+  }
+
+  const handleCourseChange = (e) => {
+    const selectedCourseName = e.target.value;
+    const selectedCourseObj = courses.find(c => c.name === selectedCourseName);
+    
+    setFormData({ 
+      ...formData, 
+      course: selectedCourseName,
+      lecturer: selectedCourseObj?.lecturer_name || 'Belum Ditentukan'
+    });
   }
 
   const handleChange = (e) => {
@@ -303,7 +311,7 @@ export default function ScheduleMaster() {
                   <select 
                     name="course" 
                     value={formData.course} 
-                    onChange={handleChange} 
+                    onChange={handleCourseChange} 
                     required
                     className="flex h-10 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-500"
                   >
@@ -319,6 +327,15 @@ export default function ScheduleMaster() {
                     )}
                   </select>
                 </div>
+                
+                <div className="space-y-1.5 p-3 bg-slate-50 border border-slate-200 rounded-lg">
+                  <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Dosen Pengampu</label>
+                  <p className="font-medium text-slate-800">
+                    {formData.lecturer || 'Pilih mata kuliah terlebih dahulu'}
+                  </p>
+                  <p className="text-xs text-slate-500 mt-1">Dosen otomatis diambil dari Master Mata Kuliah.</p>
+                </div>
+
                 <div className="space-y-1.5">
                   <label className="text-sm font-medium text-slate-700">Waktu (contoh: 08:00 - 09:30)</label>
                   <Input 

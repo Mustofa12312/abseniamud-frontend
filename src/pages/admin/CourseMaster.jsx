@@ -11,6 +11,7 @@ export default function CourseMaster() {
   const { success, error } = useToast()
   const [courses, setCourses] = useState([])
   const [faculties, setFaculties] = useState([])
+  const [lecturers, setLecturers] = useState([])
   const [loading, setLoading] = useState(true)
 
   // Filter state
@@ -25,6 +26,7 @@ export default function CourseMaster() {
 
   const [formData, setFormData] = useState({
     faculty_id: '',
+    lecturer_id: '',
     name: '',
     code: '',
     semester: '1',
@@ -34,12 +36,14 @@ export default function CourseMaster() {
   const fetchData = async () => {
     setLoading(true)
     try {
-      const [facRes, courRes] = await Promise.all([
+      const [facRes, courRes, lectRes] = await Promise.all([
         adminService.getFaculties(),
-        adminService.getCourses(filterFaculty)
+        adminService.getCourses(filterFaculty),
+        adminService.getLecturers()
       ])
       if (facRes.success) setFaculties(facRes.data)
       if (courRes.success) setCourses(courRes.data)
+      if (lectRes.success) setLecturers(lectRes.data)
     } catch (err) {
       console.error("Failed to load data", err)
     } finally {
@@ -53,7 +57,7 @@ export default function CourseMaster() {
 
   const handleOpenCreate = () => {
     setEditingCourse(null)
-    setFormData({ faculty_id: filterFaculty || '', name: '', code: '', semester: '1', sks: '2' })
+    setFormData({ faculty_id: filterFaculty || '', lecturer_id: '', name: '', code: '', semester: '1', sks: '2' })
     setIsModalOpen(true)
   }
 
@@ -61,6 +65,7 @@ export default function CourseMaster() {
     setEditingCourse(item)
     setFormData({
       faculty_id: item.faculty_id,
+      lecturer_id: item.lecturer_id || '',
       name: item.name,
       code: item.code || '',
       semester: item.semester,
@@ -82,16 +87,19 @@ export default function CourseMaster() {
     e.preventDefault()
     setSubmitting(true)
     
+    const submitData = { ...formData };
+    if (!submitData.lecturer_id) submitData.lecturer_id = null;
+    
     try {
       if (editingCourse) {
-        const res = await adminService.updateCourse(editingCourse.id, formData)
+        const res = await adminService.updateCourse(editingCourse.id, submitData)
         if (res.success) {
           success(res.message || "Mata kuliah berhasil diperbarui.")
           fetchData()
           setIsModalOpen(false)
         }
       } else {
-        const res = await adminService.createCourse(formData)
+        const res = await adminService.createCourse(submitData)
         if (res.success) {
           success(res.message || "Mata kuliah berhasil ditambahkan.")
           fetchData()
@@ -170,6 +178,9 @@ export default function CourseMaster() {
                   <p className="text-sm text-slate-500">
                     {course.faculty?.name || '-'}
                   </p>
+                  <p className="text-sm text-slate-600 mt-1 font-medium">
+                    Dosen: {course.lecturer_name || '-'}
+                  </p>
                   <div className="flex items-center gap-4 mt-2">
                     <p className="text-sm text-slate-600 flex items-center gap-1">
                       <span className="text-slate-400">Kode:</span> 
@@ -227,6 +238,20 @@ export default function CourseMaster() {
                     <option value="" disabled>Pilih Fakultas/Prodi</option>
                     {faculties.map(f => (
                       <option key={f.id} value={f.id}>{f.name}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-sm font-medium text-slate-700">Dosen Pengampu</label>
+                  <select 
+                    name="lecturer_id" 
+                    value={formData.lecturer_id} 
+                    onChange={handleChange} 
+                    className="flex h-10 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-500"
+                  >
+                    <option value="">Belum Ditentukan</option>
+                    {lecturers.map(l => (
+                      <option key={l.id} value={l.id}>{l.name}</option>
                     ))}
                   </select>
                 </div>
