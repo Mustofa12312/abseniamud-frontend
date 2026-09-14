@@ -4,7 +4,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from ".
 import { Button } from "../../components/ui/Button"
 import { Input } from "../../components/ui/Input"
 import { Search, Plus, Edit2, Trash2 } from "lucide-react"
-import { adminService } from "../../services/admin"
+import { lecturerService } from "../../services/lecturer"
 import { useToast } from "../../contexts/ToastContext"
 
 export default function LecturerMaster() {
@@ -31,7 +31,7 @@ export default function LecturerMaster() {
   useEffect(() => {
     const fetchLecturers = async () => {
       try {
-        const res = await adminService.getLecturers()
+        const res = await lecturerService.getLecturers()
         if (res.success) {
           setLecturers(res.data)
         }
@@ -83,14 +83,14 @@ export default function LecturerMaster() {
       }
       
       if (editingLecturer) {
-        const res = await adminService.updateLecturer(editingLecturer.id, formattedData)
+        const res = await lecturerService.updateLecturer(editingLecturer.id, formattedData)
         if (res.success) {
           setLecturers(lecturers.map(l => l.id === editingLecturer.id ? { ...l, ...formattedData } : l))
           setIsModalOpen(false)
           success("Data dosen berhasil diperbarui.")
         }
       } else {
-        const res = await adminService.createLecturer(formattedData)
+        const res = await lecturerService.createLecturer(formattedData)
         if (res.success) {
           setLecturers([...lecturers, res.data])
           setIsModalOpen(false)
@@ -110,7 +110,7 @@ export default function LecturerMaster() {
     setSubmitting(true)
     
     try {
-      const res = await adminService.deleteLecturer(deletingLecturer.id)
+      const res = await lecturerService.deleteLecturer(deletingLecturer.id)
       if (res.success) {
         setLecturers(lecturers.filter(l => l.id !== deletingLecturer.id))
         setIsDeleteModalOpen(false)

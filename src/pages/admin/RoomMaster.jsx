@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../..
 import { Button } from "../../components/ui/Button"
 import { Input } from "../../components/ui/Input"
 import { MapPin, Plus, Edit2, Trash2 } from "lucide-react"
-import { adminService } from "../../services/admin"
+import { masterDataService } from "../../services/masterData"
 import { useToast } from "../../contexts/ToastContext"
 import { EmptyState } from "../../components/ui/EmptyState"
 
@@ -27,7 +27,7 @@ export default function RoomMaster() {
 
   const fetchRooms = async () => {
     try {
-      const res = await adminService.getRooms()
+      const res = await masterDataService.getRooms()
       if (res.success) {
         setRooms(res.data)
       }
@@ -73,14 +73,14 @@ export default function RoomMaster() {
     
     try {
       if (editingRoom) {
-        const res = await adminService.updateRoom(editingRoom.id, formData)
+        const res = await masterDataService.updateRoom(editingRoom.id, formData)
         if (res.success) {
           success(res.message || "Ruangan berhasil diperbarui.")
           fetchRooms()
           setIsModalOpen(false)
         }
       } else {
-        const res = await adminService.createRoom(formData)
+        const res = await masterDataService.createRoom(formData)
         if (res.success) {
           success(res.message || "Ruangan berhasil ditambahkan.")
           fetchRooms()
@@ -100,7 +100,7 @@ export default function RoomMaster() {
     setSubmitting(true)
     
     try {
-      const res = await adminService.deleteRoom(deletingRoom.id)
+      const res = await masterDataService.deleteRoom(deletingRoom.id)
       if (res.success) {
         success(res.message || "Ruangan berhasil dihapus.")
         fetchRooms()

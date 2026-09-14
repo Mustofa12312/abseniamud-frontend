@@ -4,7 +4,8 @@ import { Badge } from "../../components/ui/Badge"
 import { Button } from "../../components/ui/Button"
 import { Input } from "../../components/ui/Input"
 import { Clock, Plus, BookOpen, MapPin, Edit2, Trash2, Loader2 } from "lucide-react"
-import { adminService } from "../../services/admin"
+import { scheduleService } from "../../services/schedule"
+import { masterDataService } from "../../services/masterData"
 import { useToast } from "../../contexts/ToastContext"
 
 export default function ScheduleMaster() {
@@ -40,16 +41,16 @@ export default function ScheduleMaster() {
   const fetchData = async () => {
     try {
       setLoading(true)
-      const [schedRes, roomRes, facRes, ayRes] = await Promise.all([
-        adminService.getSchedules(),
-        adminService.getRooms(),
-        adminService.getFaculties(),
-        adminService.getActiveAcademicYear()
+      const [schedRes, roomRes, facRes, activeYearRes] = await Promise.all([
+        scheduleService.getSchedules(),
+        masterDataService.getRooms(),
+        masterDataService.getFaculties(),
+        masterDataService.getActiveAcademicYear()
       ])
       if (schedRes.success) setSchedules(schedRes.data)
       if (roomRes.success) setRooms(roomRes.data)
       if (facRes.success) setFaculties(facRes.data)
-      if (ayRes && ayRes.success && ayRes.data) setActiveAcademicYear(ayRes.data)
+      if (activeYearRes && activeYearRes.success && activeYearRes.data) setActiveAcademicYear(activeYearRes.data)
     } catch (err) {
       console.error("Failed to load data", err)
     } finally {
@@ -68,7 +69,7 @@ export default function ScheduleMaster() {
         return
       }
       try {
-        const res = await adminService.getCourses(selectedFaculty, selectedSemester)
+        const res = await masterDataService.getCourses(selectedFaculty, selectedSemester)
         if (res.success) setCourses(res.data)
       } catch (err) {
         console.error("Failed to load courses", err)
@@ -114,14 +115,14 @@ export default function ScheduleMaster() {
     
     try {
       if (editingSchedule) {
-        const res = await adminService.updateSchedule(editingSchedule.id, formData)
+        const res = await scheduleService.updateSchedule(editingSchedule.id, formData)
         if (res.success) {
           await fetchData()
           setIsModalOpen(false)
           success("Jadwal berhasil diperbarui.")
         }
       } else {
-        const res = await adminService.createSchedule(formData)
+        const res = await scheduleService.createSchedule(formData)
         if (res.success) {
           await fetchData()
           setIsModalOpen(false)
@@ -141,7 +142,7 @@ export default function ScheduleMaster() {
     setSubmitting(true)
     
     try {
-      const res = await adminService.deleteSchedule(deletingSchedule.id)
+      const res = await scheduleService.deleteSchedule(deletingSchedule.id)
       if (res.success) {
         await fetchData()
         setIsDeleteModalOpen(false)

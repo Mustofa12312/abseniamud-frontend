@@ -20,16 +20,7 @@ export const adminService = {
     const response = await api.get(url);
     return response.data;
   },
-  
-  getLocations: async () => {
-    const response = await api.get('/admin/locations');
-    return response.data;
-  },
-  
-  getLecturers: async () => {
-    const response = await api.get('/admin/lecturers');
-    return response.data;
-  },
+
   
   getReports: async (month, year) => {
     let url = '/admin/reports';
@@ -39,11 +30,7 @@ export const adminService = {
     const response = await api.get(url);
     return response.data;
   },
-  
-  getSchedules: async () => {
-    const response = await api.get('/admin/schedules');
-    return response.data;
-  },
+
   
   getSettings: async () => {
     const response = await api.get('/admin/settings');
@@ -90,160 +77,5 @@ export const adminService = {
     return new Promise(resolve => setTimeout(() => resolve({ success: true, message: "Pengguna berhasil dihapus" }), 500));
   },
 
-  createLocation: async (data) => {
-    const response = await api.post('/admin/locations', data);
-    return response.data;
-  },
-  updateLocation: async (id, data) => {
-    const response = await api.put(`/admin/locations/${id}`, data);
-    return response.data;
-  },
-  deleteLocation: async (id) => {
-    const response = await api.delete(`/admin/locations/${id}`);
-    return response.data;
-  },
-  
-  createLecturer: async (data) => {
-    const response = await api.post('/admin/lecturers', data);
-    return response.data;
-  },
-  updateLecturer: async (id, data) => {
-    const response = await api.put(`/admin/lecturers/${id}`, data);
-    return response.data;
-  },
-  deleteLecturer: async (id) => {
-    const response = await api.delete(`/admin/lecturers/${id}`);
-    return response.data;
-  },
-  
-  createSchedule: async (data) => {
-    const response = await api.post('/admin/schedules', data);
-    return response.data;
-  },
-  updateSchedule: async (id, data) => {
-    const response = await api.put(`/admin/schedules/${id}`, data);
-    return response.data;
-  },
-  deleteSchedule: async (id) => {
-    const response = await api.delete(`/admin/schedules/${id}`);
-    return response.data;
-  },
-  
-  // Positions
-  getPositions: async () => {
-    const response = await api.get('/admin/positions');
-    return response.data;
-  },
-  createPosition: async (data) => {
-    const response = await api.post('/admin/positions', data);
-    return response.data;
-  },
-  updatePosition: async (id, data) => {
-    const response = await api.put(`/admin/positions/${id}`, data);
-    return response.data;
-  },
-  deletePosition: async (id) => {
-    const response = await api.delete(`/admin/positions/${id}`);
-    return response.data;
-  },
 
-  // Assignments
-  getAssignments: async (lecturerId = null) => {
-    const url = lecturerId ? `/admin/assignments?lecturer_id=${lecturerId}` : '/admin/assignments';
-    const response = await api.get(url);
-    return response.data;
-  },
-  createAssignment: async (data) => {
-    const response = await api.post('/admin/assignments', data);
-    return response.data;
-  },
-  updateAssignment: async (id, data) => {
-    const response = await api.put(`/admin/assignments/${id}`, data);
-    return response.data;
-  },
-  deleteAssignment: async (id) => {
-    const response = await api.delete(`/admin/assignments/${id}`);
-    return response.data;
-  },
-
-  // Rooms
-  getRooms: async () => {
-    const response = await api.get('/admin/rooms');
-    return response.data;
-  },
-  createRoom: async (data) => {
-    const response = await api.post('/admin/rooms', data);
-    return response.data;
-  },
-  updateRoom: async (id, data) => {
-    const response = await api.put(`/admin/rooms/${id}`, data);
-    return response.data;
-  },
-  deleteRoom: async (id) => {
-    const response = await api.delete(`/admin/rooms/${id}`);
-    return response.data;
-  },
-
-  // Faculties
-  getFaculties: async () => {
-    const response = await api.get('/admin/faculties');
-    return response.data;
-  },
-  createFaculty: async (data) => {
-    const response = await api.post('/admin/faculties', data);
-    return response.data;
-  },
-  updateFaculty: async (id, data) => {
-    const response = await api.put(`/admin/faculties/${id}`, data);
-    return response.data;
-  },
-  deleteFaculty: async (id) => {
-    const response = await api.delete(`/admin/faculties/${id}`);
-    return response.data;
-  },
-
-  // Courses
-  getCourses: async (facultyId = null, semester = null) => {
-    let url = '/admin/courses';
-    const params = [];
-    if (facultyId) params.push(`faculty_id=${facultyId}`);
-    if (semester) params.push(`semester=${semester}`);
-    if (params.length > 0) url += `?${params.join('&')}`;
-    const response = await api.get(url);
-    return response.data;
-  },
-  createCourse: async (data) => {
-    const response = await api.post('/admin/courses', data);
-    return response.data;
-  },
-  updateCourse: async (id, data) => {
-    const response = await api.put(`/admin/courses/${id}`, data);
-    return response.data;
-  },
-  deleteCourse: async (id) => {
-    const response = await api.delete(`/admin/courses/${id}`);
-    return response.data;
-  },
-
-  // Academic Years
-  getAcademicYears: async () => {
-    const response = await api.get('/admin/academic-years');
-    return response.data;
-  },
-  getActiveAcademicYear: async () => {
-    const response = await api.get('/admin/academic-years/active');
-    return response.data;
-  },
-  createAcademicYear: async (data) => {
-    const response = await api.post('/admin/academic-years', data);
-    return response.data;
-  },
-  updateAcademicYear: async (id, data) => {
-    const response = await api.put(`/admin/academic-years/${id}`, data);
-    return response.data;
-  },
-  deleteAcademicYear: async (id) => {
-    const response = await api.delete(`/admin/academic-years/${id}`);
-    return response.data;
-  }
 };

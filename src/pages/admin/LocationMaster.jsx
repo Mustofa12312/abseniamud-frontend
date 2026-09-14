@@ -5,7 +5,7 @@ import { Badge } from "../../components/ui/Badge"
 import { Button } from "../../components/ui/Button"
 import { Input } from "../../components/ui/Input"
 import { MapPin, Plus, Edit2, Trash2 } from "lucide-react"
-import { adminService } from "../../services/admin"
+import { locationService } from "../../services/location"
 import { useToast } from "../../contexts/ToastContext"
 
 export default function LocationMaster() {
@@ -29,7 +29,7 @@ export default function LocationMaster() {
 
   const fetchLocations = async () => {
     try {
-      const res = await adminService.getLocations()
+      const res = await locationService.getLocations()
       if (res.success) {
         setLocations(res.data)
       }
@@ -81,14 +81,14 @@ export default function LocationMaster() {
       }
       
       if (editingLocation) {
-        const res = await adminService.updateLocation(editingLocation.id, formattedData)
+        const res = await locationService.updateLocation(editingLocation.id, formattedData)
         if (res.success) {
           setLocations(locations.map(l => l.id === editingLocation.id ? res.data : l))
           setIsModalOpen(false)
           success("Lokasi berhasil diperbarui.")
         }
       } else {
-        const res = await adminService.createLocation(formattedData)
+        const res = await locationService.createLocation(formattedData)
         if (res.success) {
           setLocations([...locations, res.data])
           setIsModalOpen(false)
@@ -108,7 +108,7 @@ export default function LocationMaster() {
     setSubmitting(true)
     
     try {
-      const res = await adminService.deleteLocation(deletingLocation.id)
+      const res = await locationService.deleteLocation(deletingLocation.id)
       if (res.success) {
         setLocations(locations.filter(l => l.id !== deletingLocation.id))
         setIsDeleteModalOpen(false)

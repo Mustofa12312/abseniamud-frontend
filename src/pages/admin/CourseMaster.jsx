@@ -3,7 +3,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../..
 import { Button } from "../../components/ui/Button"
 import { Input } from "../../components/ui/Input"
 import { BookOpen, Plus, Edit2, Trash2 } from "lucide-react"
-import { adminService } from "../../services/admin"
+import { masterDataService } from "../../services/masterData"
+import { lecturerService } from "../../services/lecturer"
 import { useToast } from "../../contexts/ToastContext"
 import { EmptyState } from "../../components/ui/EmptyState"
 
@@ -36,13 +37,13 @@ export default function CourseMaster() {
   const fetchData = async () => {
     setLoading(true)
     try {
-      const [facRes, courRes, lectRes] = await Promise.all([
-        adminService.getFaculties(),
-        adminService.getCourses(filterFaculty),
-        adminService.getLecturers()
+      const [facRes, courseRes, lectRes] = await Promise.all([
+        masterDataService.getFaculties(),
+        masterDataService.getCourses(filterFaculty),
+        lecturerService.getLecturers()
       ])
       if (facRes.success) setFaculties(facRes.data)
-      if (courRes.success) setCourses(courRes.data)
+      if (courseRes.success) setCourses(courseRes.data)
       if (lectRes.success) setLecturers(lectRes.data)
     } catch (err) {
       console.error("Failed to load data", err)
@@ -92,14 +93,14 @@ export default function CourseMaster() {
     
     try {
       if (editingCourse) {
-        const res = await adminService.updateCourse(editingCourse.id, submitData)
+        const res = await masterDataService.updateCourse(editingCourse.id, submitData)
         if (res.success) {
           success(res.message || "Mata kuliah berhasil diperbarui.")
           fetchData()
           setIsModalOpen(false)
         }
       } else {
-        const res = await adminService.createCourse(submitData)
+        const res = await masterDataService.createCourse(submitData)
         if (res.success) {
           success(res.message || "Mata kuliah berhasil ditambahkan.")
           fetchData()
@@ -119,7 +120,7 @@ export default function CourseMaster() {
     setSubmitting(true)
     
     try {
-      const res = await adminService.deleteCourse(deletingCourse.id)
+      const res = await masterDataService.deleteCourse(deletingCourse.id)
       if (res.success) {
         success(res.message || "Mata kuliah berhasil dihapus.")
         fetchData()

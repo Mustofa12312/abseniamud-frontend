@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../..
 import { Button } from "../../components/ui/Button"
 import { Input } from "../../components/ui/Input"
 import { Calendar, Plus, Edit2, Trash2, CheckCircle } from "lucide-react"
-import { adminService } from "../../services/admin"
+import { masterDataService } from "../../services/masterData"
 import { useToast } from "../../contexts/ToastContext"
 import { EmptyState } from "../../components/ui/EmptyState"
 import { Badge } from "../../components/ui/Badge"
@@ -28,7 +28,7 @@ export default function AcademicYearMaster() {
 
   const fetchAcademicYears = async () => {
     try {
-      const res = await adminService.getAcademicYears()
+      const res = await masterDataService.getAcademicYears()
       if (res.success) {
         setAcademicYears(res.data)
       }
@@ -75,14 +75,14 @@ export default function AcademicYearMaster() {
     
     try {
       if (editingYear) {
-        const res = await adminService.updateAcademicYear(editingYear.id, formData)
+        const res = await masterDataService.updateAcademicYear(editingYear.id, formData)
         if (res.success) {
           success(res.message || "Tahun Akademik berhasil diperbarui.")
           fetchAcademicYears()
           setIsModalOpen(false)
         }
       } else {
-        const res = await adminService.createAcademicYear(formData)
+        const res = await masterDataService.createAcademicYear(formData)
         if (res.success) {
           success(res.message || "Tahun Akademik berhasil ditambahkan.")
           fetchAcademicYears()
@@ -102,7 +102,7 @@ export default function AcademicYearMaster() {
     setSubmitting(true)
     
     try {
-      const res = await adminService.deleteAcademicYear(deletingYear.id)
+      const res = await masterDataService.deleteAcademicYear(deletingYear.id)
       if (res.success) {
         success(res.message || "Tahun Akademik berhasil dihapus.")
         fetchAcademicYears()

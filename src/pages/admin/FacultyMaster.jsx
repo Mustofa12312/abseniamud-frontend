@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../..
 import { Button } from "../../components/ui/Button"
 import { Input } from "../../components/ui/Input"
 import { GraduationCap, Plus, Edit2, Trash2 } from "lucide-react"
-import { adminService } from "../../services/admin"
+import { masterDataService } from "../../services/masterData"
 import { useToast } from "../../contexts/ToastContext"
 import { EmptyState } from "../../components/ui/EmptyState"
 
@@ -26,7 +26,7 @@ export default function FacultyMaster() {
 
   const fetchFaculties = async () => {
     try {
-      const res = await adminService.getFaculties()
+      const res = await masterDataService.getFaculties()
       if (res.success) {
         setFaculties(res.data)
       }
@@ -71,14 +71,14 @@ export default function FacultyMaster() {
     
     try {
       if (editingFaculty) {
-        const res = await adminService.updateFaculty(editingFaculty.id, formData)
+        const res = await masterDataService.updateFaculty(editingFaculty.id, formData)
         if (res.success) {
           success(res.message || "Fakultas berhasil diperbarui.")
           fetchFaculties()
           setIsModalOpen(false)
         }
       } else {
-        const res = await adminService.createFaculty(formData)
+        const res = await masterDataService.createFaculty(formData)
         if (res.success) {
           success(res.message || "Fakultas berhasil ditambahkan.")
           fetchFaculties()
@@ -98,7 +98,7 @@ export default function FacultyMaster() {
     setSubmitting(true)
     
     try {
-      const res = await adminService.deleteFaculty(deletingFaculty.id)
+      const res = await masterDataService.deleteFaculty(deletingFaculty.id)
       if (res.success) {
         success(res.message || "Fakultas berhasil dihapus.")
         fetchFaculties()

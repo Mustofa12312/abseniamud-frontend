@@ -4,7 +4,8 @@ import { Badge } from "../../components/ui/Badge"
 import { Button } from "../../components/ui/Button"
 import { Input } from "../../components/ui/Input"
 import { Plus, Edit2, Trash2, Loader2, Search, Briefcase } from "lucide-react"
-import { adminService } from "../../services/admin"
+import { scheduleService } from "../../services/schedule"
+import { lecturerService } from "../../services/lecturer"
 import { useToast } from "../../contexts/ToastContext"
 
 export default function AssignmentMaster() {
@@ -28,9 +29,9 @@ export default function AssignmentMaster() {
     try {
       setLoading(true)
       const [assRes, lecRes, posRes] = await Promise.all([
-        adminService.getAssignments(),
-        adminService.getLecturers(),
-        adminService.getPositions()
+        scheduleService.getAssignments(),
+        lecturerService.getLecturers(),
+        scheduleService.getPositions()
       ])
       if (assRes.success) setAssignments(assRes.data)
       if (lecRes.success) setLecturers(lecRes.data)
@@ -78,14 +79,14 @@ export default function AssignmentMaster() {
     
     try {
       if (editingAssignment) {
-        const res = await adminService.updateAssignment(editingAssignment.id, formData)
+        const res = await scheduleService.updateAssignment(editingAssignment.id, formData)
         if (res.success) {
           await fetchData()
           setIsModalOpen(false)
           success("Penugasan berhasil diperbarui.")
         }
       } else {
-        const res = await adminService.createAssignment(formData)
+        const res = await scheduleService.createAssignment(formData)
         if (res.success) {
           await fetchData()
           setIsModalOpen(false)
@@ -105,7 +106,7 @@ export default function AssignmentMaster() {
     setSubmitting(true)
     
     try {
-      const res = await adminService.deleteAssignment(deletingAssignment.id)
+      const res = await scheduleService.deleteAssignment(deletingAssignment.id)
       if (res.success) {
         await fetchData()
         setIsDeleteModalOpen(false)

@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../..
 import { Button } from "../../components/ui/Button"
 import { Input } from "../../components/ui/Input"
 import { Plus, Edit2, Trash2, Loader2, Search } from "lucide-react"
-import { adminService } from "../../services/admin"
+import { scheduleService } from "../../services/schedule"
 import { useToast } from "../../contexts/ToastContext"
 
 export default function PositionMaster() {
@@ -24,7 +24,7 @@ export default function PositionMaster() {
   const fetchData = async () => {
     try {
       setLoading(true)
-      const res = await adminService.getPositions()
+      const res = await scheduleService.getPositions()
       if (res.success) setPositions(res.data)
     } catch (err) {
       console.error("Failed to load positions", err)
@@ -64,14 +64,14 @@ export default function PositionMaster() {
     
     try {
       if (editingPosition) {
-        const res = await adminService.updatePosition(editingPosition.id, formData)
+        const res = await scheduleService.updatePosition(editingPosition.id, formData)
         if (res.success) {
           await fetchData()
           setIsModalOpen(false)
           success("Jabatan berhasil diperbarui.")
         }
       } else {
-        const res = await adminService.createPosition(formData)
+        const res = await scheduleService.createPosition(formData)
         if (res.success) {
           await fetchData()
           setIsModalOpen(false)
@@ -91,7 +91,7 @@ export default function PositionMaster() {
     setSubmitting(true)
     
     try {
-      const res = await adminService.deletePosition(deletingPosition.id)
+      const res = await scheduleService.deletePosition(deletingPosition.id)
       if (res.success) {
         await fetchData()
         setIsDeleteModalOpen(false)
