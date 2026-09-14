@@ -18,6 +18,8 @@ import FacultyMaster from "./pages/admin/FacultyMaster"
 import CourseMaster from "./pages/admin/CourseMaster"
 
 import LecturerMaster from "./pages/admin/LecturerMaster"
+import PositionMaster from "./pages/admin/PositionMaster"
+import AssignmentMaster from "./pages/admin/AssignmentMaster"
 import ReportMaster from "./pages/admin/ReportMaster"
 import ScheduleMaster from "./pages/admin/ScheduleMaster"
 import SystemSettings from "./pages/admin/SystemSettings"
@@ -61,6 +63,8 @@ function App() {
               <Route path="faculties" element={<FacultyMaster />} />
               <Route path="courses" element={<CourseMaster />} />
               <Route path="lecturers" element={<LecturerMaster />} />
+              <Route path="positions" element={<PositionMaster />} />
+              <Route path="assignments" element={<AssignmentMaster />} />
               <Route path="schedules" element={<ScheduleMaster />} />
               <Route path="reports" element={<ReportMaster />} />
               <Route path="corrections" element={<CorrectionMaster />} />

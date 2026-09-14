@@ -11,6 +11,15 @@ export const adminService = {
     const response = await api.get(url);
     return response.data;
   },
+
+  getAttendanceDetails: async (lecturerId, month, year) => {
+    let url = `/admin/attendance/${lecturerId}`;
+    if (month && year) {
+        url += `?month=${month}&year=${year}`;
+    }
+    const response = await api.get(url);
+    return response.data;
+  },
   
   getLocations: async () => {
     const response = await api.get('/admin/locations');
@@ -81,35 +90,80 @@ export const adminService = {
     return new Promise(resolve => setTimeout(() => resolve({ success: true, message: "Pengguna berhasil dihapus" }), 500));
   },
 
-  // Mock implementations for features without backend endpoints yet
   createLocation: async (data) => {
-    return new Promise(resolve => setTimeout(() => resolve({ success: true, message: "Lokasi berhasil ditambahkan", data: { id: Date.now(), ...data, status: "Aktif" } }), 500));
+    const response = await api.post('/admin/locations', data);
+    return response.data;
   },
   updateLocation: async (id, data) => {
-    return new Promise(resolve => setTimeout(() => resolve({ success: true, message: "Lokasi berhasil diperbarui", data: { id, ...data } }), 500));
+    const response = await api.put(`/admin/locations/${id}`, data);
+    return response.data;
   },
   deleteLocation: async (id) => {
-    return new Promise(resolve => setTimeout(() => resolve({ success: true, message: "Lokasi berhasil dihapus" }), 500));
+    const response = await api.delete(`/admin/locations/${id}`);
+    return response.data;
   },
   
   createLecturer: async (data) => {
-    return new Promise(resolve => setTimeout(() => resolve({ success: true, message: "Dosen berhasil ditambahkan", data: { id: Date.now(), ...data, status: "Aktif" } }), 500));
+    const response = await api.post('/admin/lecturers', data);
+    return response.data;
   },
   updateLecturer: async (id, data) => {
-    return new Promise(resolve => setTimeout(() => resolve({ success: true, message: "Dosen berhasil diperbarui", data: { id, ...data } }), 500));
+    const response = await api.put(`/admin/lecturers/${id}`, data);
+    return response.data;
   },
   deleteLecturer: async (id) => {
-    return new Promise(resolve => setTimeout(() => resolve({ success: true, message: "Dosen berhasil dihapus" }), 500));
+    const response = await api.delete(`/admin/lecturers/${id}`);
+    return response.data;
   },
   
   createSchedule: async (data) => {
-    return new Promise(resolve => setTimeout(() => resolve({ success: true, message: "Jadwal berhasil ditambahkan", data: { id: Date.now(), ...data, status: "Aktif" } }), 500));
+    const response = await api.post('/admin/schedules', data);
+    return response.data;
   },
   updateSchedule: async (id, data) => {
-    return new Promise(resolve => setTimeout(() => resolve({ success: true, message: "Jadwal berhasil diperbarui", data: { id, ...data } }), 500));
+    const response = await api.put(`/admin/schedules/${id}`, data);
+    return response.data;
   },
   deleteSchedule: async (id) => {
-    return new Promise(resolve => setTimeout(() => resolve({ success: true, message: "Jadwal berhasil dihapus" }), 500));
+    const response = await api.delete(`/admin/schedules/${id}`);
+    return response.data;
+  },
+  
+  // Positions
+  getPositions: async () => {
+    const response = await api.get('/admin/positions');
+    return response.data;
+  },
+  createPosition: async (data) => {
+    const response = await api.post('/admin/positions', data);
+    return response.data;
+  },
+  updatePosition: async (id, data) => {
+    const response = await api.put(`/admin/positions/${id}`, data);
+    return response.data;
+  },
+  deletePosition: async (id) => {
+    const response = await api.delete(`/admin/positions/${id}`);
+    return response.data;
+  },
+
+  // Assignments
+  getAssignments: async (lecturerId = null) => {
+    const url = lecturerId ? `/admin/assignments?lecturer_id=${lecturerId}` : '/admin/assignments';
+    const response = await api.get(url);
+    return response.data;
+  },
+  createAssignment: async (data) => {
+    const response = await api.post('/admin/assignments', data);
+    return response.data;
+  },
+  updateAssignment: async (id, data) => {
+    const response = await api.put(`/admin/assignments/${id}`, data);
+    return response.data;
+  },
+  deleteAssignment: async (id) => {
+    const response = await api.delete(`/admin/assignments/${id}`);
+    return response.data;
   },
 
   // Rooms

@@ -32,6 +32,8 @@ export default function AdminLayout() {
         { icon: CalendarDays, label: "Tahun Akademik", path: "/admin/academic-years" },
         { icon: UserCheck, label: "Pengguna & Hak Akses", path: "/admin/users" },
         { icon: Users, label: "Data Dosen", path: "/admin/lecturers" },
+        { icon: Users, label: "Jabatan", path: "/admin/positions" },
+        { icon: Users, label: "Penugasan Dosen", path: "/admin/assignments" },
         { icon: MapPin, label: "Master Lokasi", path: "/admin/locations" },
         { icon: MapPin, label: "Master Ruangan", path: "/admin/rooms" },
         { icon: GraduationCap, label: "Fakultas / Prodi", path: "/admin/faculties" },

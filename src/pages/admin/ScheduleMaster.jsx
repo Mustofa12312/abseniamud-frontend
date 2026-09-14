@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../..
 import { Badge } from "../../components/ui/Badge"
 import { Button } from "../../components/ui/Button"
 import { Input } from "../../components/ui/Input"
-import { Clock, Plus, BookOpen, MapPin, Edit2, Trash2 } from "lucide-react"
+import { Clock, Plus, BookOpen, MapPin, Edit2, Trash2, Loader2 } from "lucide-react"
 import { adminService } from "../../services/admin"
 import { useToast } from "../../contexts/ToastContext"
 
@@ -26,36 +26,38 @@ export default function ScheduleMaster() {
   const [submitting, setSubmitting] = useState(false)
 
   const [formData, setFormData] = useState({
-    day: 'Senin',
-    course: '',
-    time: '',
-    lecturer: '',
-    room: ''
+    day_of_week: 'Senin',
+    course_id: '',
+    room_id: '',
+    start_time: '08:00',
+    end_time: '09:30',
   })
   
   // Temporary states for form filtering
   const [selectedFaculty, setSelectedFaculty] = useState('')
   const [selectedSemester, setSelectedSemester] = useState('1')
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [schedRes, roomRes, facRes, ayRes] = await Promise.all([
-          adminService.getSchedules(),
-          adminService.getRooms(),
-          adminService.getFaculties(),
-          adminService.getActiveAcademicYear()
-        ])
-        if (schedRes.success) setSchedules(schedRes.data)
-        if (roomRes.success) setRooms(roomRes.data)
-        if (facRes.success) setFaculties(facRes.data)
-        if (ayRes && ayRes.success && ayRes.data) setActiveAcademicYear(ayRes.data)
-      } catch (err) {
-        console.error("Failed to load data", err)
-      } finally {
-        setLoading(false)
-      }
+  const fetchData = async () => {
+    try {
+      setLoading(true)
+      const [schedRes, roomRes, facRes, ayRes] = await Promise.all([
+        adminService.getSchedules(),
+        adminService.getRooms(),
+        adminService.getFaculties(),
+        adminService.getActiveAcademicYear()
+      ])
+      if (schedRes.success) setSchedules(schedRes.data)
+      if (roomRes.success) setRooms(roomRes.data)
+      if (facRes.success) setFaculties(facRes.data)
+      if (ayRes && ayRes.success && ayRes.data) setActiveAcademicYear(ayRes.data)
+    } catch (err) {
+      console.error("Failed to load data", err)
+    } finally {
+      setLoading(false)
     }
+  }
+
+  useEffect(() => {
     fetchData()
   }, [])
 
@@ -77,7 +79,7 @@ export default function ScheduleMaster() {
 
   const handleOpenCreate = () => {
     setEditingSchedule(null)
-    setFormData({ day: 'Senin', course: '', time: '', lecturer: '', room: '' })
+    setFormData({ day_of_week: 'Senin', course_id: '', room_id: '', start_time: '08:00', end_time: '09:30' })
     setSelectedFaculty('')
     setSelectedSemester('1')
     setIsModalOpen(true)
@@ -86,11 +88,11 @@ export default function ScheduleMaster() {
   const handleOpenEdit = (day, item) => {
     setEditingSchedule({ ...item, oldDay: day })
     setFormData({
-      day: day,
-      course: item.course,
-      time: item.time,
-      lecturer: item.lecturer,
-      room: item.room
+      day_of_week: item.day_of_week,
+      course_id: item.course_id,
+      room_id: item.room_id,
+      start_time: item.start_time,
+      end_time: item.end_time
     })
     setSelectedFaculty('')
     setSelectedSemester('1')
@@ -100,17 +102,6 @@ export default function ScheduleMaster() {
   const handleOpenDelete = (day, item) => {
     setDeletingSchedule({ ...item, day })
     setIsDeleteModalOpen(true)
-  }
-
-  const handleCourseChange = (e) => {
-    const selectedCourseName = e.target.value;
-    const selectedCourseObj = courses.find(c => c.name === selectedCourseName);
-    
-    setFormData({ 
-      ...formData, 
-      course: selectedCourseName,
-      lecturer: selectedCourseObj?.lecturer_name || 'Belum Ditentukan'
-    });
   }
 
   const handleChange = (e) => {
@@ -125,34 +116,21 @@ export default function ScheduleMaster() {
       if (editingSchedule) {
         const res = await adminService.updateSchedule(editingSchedule.id, formData)
         if (res.success) {
-          const newSchedules = { ...schedules }
-          // Remove from old day
-          if (newSchedules[editingSchedule.oldDay]) {
-            newSchedules[editingSchedule.oldDay] = newSchedules[editingSchedule.oldDay].filter(i => i.id !== editingSchedule.id)
-          }
-          // Add to new day
-          if (!newSchedules[formData.day]) newSchedules[formData.day] = []
-          newSchedules[formData.day].push({ id: editingSchedule.id, ...formData })
-          
-          setSchedules(newSchedules)
+          await fetchData()
           setIsModalOpen(false)
           success("Jadwal berhasil diperbarui.")
         }
       } else {
         const res = await adminService.createSchedule(formData)
         if (res.success) {
-          const newSchedules = { ...schedules }
-          if (!newSchedules[formData.day]) newSchedules[formData.day] = []
-          newSchedules[formData.day].push(res.data)
-          
-          setSchedules(newSchedules)
+          await fetchData()
           setIsModalOpen(false)
           success("Jadwal berhasil ditambahkan.")
         }
       }
     } catch (err) {
-      console.error(err)
-      error("Terjadi kesalahan.")
+      const msg = err?.response?.data?.message || "Terjadi kesalahan."
+      error(msg)
     } finally {
       setSubmitting(false)
     }
@@ -165,21 +143,19 @@ export default function ScheduleMaster() {
     try {
       const res = await adminService.deleteSchedule(deletingSchedule.id)
       if (res.success) {
-        const newSchedules = { ...schedules }
-        if (newSchedules[deletingSchedule.day]) {
-          newSchedules[deletingSchedule.day] = newSchedules[deletingSchedule.day].filter(i => i.id !== deletingSchedule.id)
-        }
-        setSchedules(newSchedules)
+        await fetchData()
         setIsDeleteModalOpen(false)
         success("Jadwal berhasil dihapus.")
       }
     } catch (err) {
-      console.error(err)
       error("Gagal menghapus.")
     } finally {
       setSubmitting(false)
     }
   }
+
+  // Derived state for selected course to show lecturer
+  const selectedCourseObj = courses.find(c => String(c.id) === String(formData.course_id))
 
   return (
     <div className="space-y-6">
@@ -218,23 +194,25 @@ export default function ScheduleMaster() {
             </CardHeader>
             <CardContent className="p-0 flex-1 flex flex-col">
               {loading ? (
-                <div className="p-6 text-center text-slate-500 animate-pulse">Memuat jadwal...</div>
+                <div className="p-6 flex items-center justify-center text-slate-500">
+                  <Loader2 className="animate-spin mr-2" size={16} /> Memuat...
+                </div>
               ) : schedules[day] && schedules[day].length > 0 ? (
                 <div className="divide-y divide-slate-100 flex-1">
                   {schedules[day].map((item) => (
                     <div key={item.id} className="p-4 hover:bg-slate-50 transition-colors group">
                       <div className="flex justify-between items-start mb-2">
-                        <h4 className="font-semibold text-brand-700">{item.course}</h4>
+                        <h4 className="font-semibold text-brand-700">{item.course_name}</h4>
                         <span className="text-xs font-medium bg-brand-50 text-brand-600 px-2 py-1 rounded-full flex items-center gap-1">
-                          <Clock size={12}/> {item.time}
+                          <Clock size={12}/> {item.start_time} - {item.end_time}
                         </span>
                       </div>
                       <div className="space-y-1.5">
                         <p className="text-sm text-slate-600 flex items-center gap-2">
-                          <BookOpen size={14} className="text-slate-400"/> Dosen: {item.lecturer}
+                          <BookOpen size={14} className="text-slate-400"/> Dosen: {item.lecturer_name}
                         </p>
                         <p className="text-sm text-slate-600 flex items-center gap-2">
-                          <MapPin size={14} className="text-slate-400"/> Ruang: {item.room}
+                          <MapPin size={14} className="text-slate-400"/> Ruang: {item.room_name}
                         </p>
                       </div>
                       <div className="mt-3 opacity-0 group-hover:opacity-100 transition-opacity flex gap-2">
@@ -269,8 +247,8 @@ export default function ScheduleMaster() {
                 <div className="space-y-1.5">
                   <label className="text-sm font-medium text-slate-700">Hari</label>
                   <select 
-                    name="day" 
-                    value={formData.day} 
+                    name="day_of_week" 
+                    value={formData.day_of_week} 
                     onChange={handleChange}
                     className="flex h-10 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-500"
                   >
@@ -309,9 +287,9 @@ export default function ScheduleMaster() {
                 <div className="space-y-1.5">
                   <label className="text-sm font-medium text-slate-700">Mata Kuliah</label>
                   <select 
-                    name="course" 
-                    value={formData.course} 
-                    onChange={handleCourseChange} 
+                    name="course_id" 
+                    value={formData.course_id} 
+                    onChange={handleChange} 
                     required
                     className="flex h-10 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-500"
                   >
@@ -319,11 +297,11 @@ export default function ScheduleMaster() {
                       {(!selectedFaculty) ? "Pilih Fakultas Dulu" : (courses.length === 0 ? "Tidak Ada MK" : "Pilih Mata Kuliah")}
                     </option>
                     {courses.map(c => (
-                      <option key={c.id} value={c.name}>{c.name}</option>
+                      <option key={c.id} value={c.id}>{c.name}</option>
                     ))}
                     {/* Preserve existing value when editing if not in list */}
-                    {editingSchedule && formData.course && !courses.find(c => c.name === formData.course) && (
-                      <option value={formData.course}>{formData.course} (Tersimpan)</option>
+                    {editingSchedule && formData.course_id && !courses.find(c => c.id === formData.course_id) && (
+                      <option value={formData.course_id}>{editingSchedule.course_name} (Tersimpan)</option>
                     )}
                   </select>
                 </div>
@@ -331,48 +309,46 @@ export default function ScheduleMaster() {
                 <div className="space-y-1.5 p-3 bg-slate-50 border border-slate-200 rounded-lg">
                   <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Dosen Pengampu</label>
                   <p className="font-medium text-slate-800">
-                    {formData.lecturer || 'Pilih mata kuliah terlebih dahulu'}
+                    {selectedCourseObj ? selectedCourseObj.lecturer_name : (editingSchedule ? editingSchedule.lecturer_name : 'Pilih mata kuliah')}
                   </p>
                   <p className="text-xs text-slate-500 mt-1">Dosen otomatis diambil dari Master Mata Kuliah.</p>
                 </div>
 
-                <div className="space-y-1.5">
-                  <label className="text-sm font-medium text-slate-700">Waktu (contoh: 08:00 - 09:30)</label>
-                  <Input 
-                    type="text" 
-                    name="time" 
-                    value={formData.time} 
-                    onChange={handleChange} 
-                    required 
-                  />
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <label className="text-sm font-medium text-slate-700">Jam Mulai</label>
+                    <Input 
+                      type="time" 
+                      name="start_time" 
+                      value={formData.start_time} 
+                      onChange={handleChange} 
+                      required 
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-sm font-medium text-slate-700">Jam Selesai</label>
+                    <Input 
+                      type="time" 
+                      name="end_time" 
+                      value={formData.end_time} 
+                      onChange={handleChange} 
+                      required 
+                    />
+                  </div>
                 </div>
-                <div className="space-y-1.5">
-                  <label className="text-sm font-medium text-slate-700">Nama Dosen</label>
-                  <select 
-                    name="lecturer" 
-                    value={formData.lecturer} 
-                    onChange={handleChange} 
-                    required
-                    className="flex h-10 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-500"
-                  >
-                    <option value="" disabled>Pilih Dosen</option>
-                    {lecturers.map(l => (
-                      <option key={l.id} value={l.name}>{l.name}</option>
-                    ))}
-                  </select>
-                </div>
+
                 <div className="space-y-1.5">
                   <label className="text-sm font-medium text-slate-700">Ruangan</label>
                   <select 
-                    name="room" 
-                    value={formData.room} 
+                    name="room_id" 
+                    value={formData.room_id} 
                     onChange={handleChange} 
                     required
                     className="flex h-10 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-500"
                   >
                     <option value="" disabled>Pilih Ruangan</option>
                     {rooms.map(r => (
-                      <option key={r.id} value={r.name}>{r.name}</option>
+                      <option key={r.id} value={r.id}>{r.name}</option>
                     ))}
                   </select>
                 </div>
@@ -400,7 +376,7 @@ export default function ScheduleMaster() {
             </CardHeader>
             <CardContent>
               <p className="text-sm text-slate-600 mb-6">
-                Apakah Anda yakin ingin menghapus jadwal <strong>{deletingSchedule?.course}</strong>? Tindakan ini tidak dapat dibatalkan.
+                Apakah Anda yakin ingin menghapus jadwal <strong>{deletingSchedule?.course_name}</strong>? Tindakan ini tidak dapat dibatalkan.
               </p>
               <div className="flex gap-3">
                 <Button type="button" variant="outline" className="w-full" onClick={() => setIsDeleteModalOpen(false)}>

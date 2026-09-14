@@ -2,7 +2,7 @@ import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader } from "../../components/ui/Card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../../components/ui/Table"
 import { Button } from "../../components/ui/Button"
-import { Download, FileSpreadsheet, Calendar as CalendarIcon, Filter } from "lucide-react"
+import { Download, FileSpreadsheet, Calendar as CalendarIcon, Filter, Eye, X } from "lucide-react"
 import { adminService } from "../../services/admin"
 import { useToast } from "../../contexts/ToastContext"
 import { EmptyState } from "../../components/ui/EmptyState"
@@ -29,6 +29,25 @@ export default function ReportMaster() {
       console.error("Failed to load reports", err)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const [detailModalOpen, setDetailModalOpen] = useState(false)
+  const [detailData, setDetailData] = useState(null)
+  const [detailLoading, setDetailLoading] = useState(false)
+
+  const openDetail = async (lecturerId) => {
+    setDetailModalOpen(true)
+    setDetailLoading(true)
+    try {
+      const res = await adminService.getAttendanceDetails(lecturerId, selectedMonth, selectedYear)
+      if (res.success) {
+        setDetailData(res)
+      }
+    } catch (err) {
+      error("Gagal memuat detail presensi")
+    } finally {
+      setDetailLoading(false)
     }
   }
 
@@ -201,6 +220,7 @@ export default function ReportMaster() {
                 <TableHead className="text-center">Total Terlambat</TableHead>
                 <TableHead className="text-center">Total Alpa</TableHead>
                 <TableHead className="text-right">Persentase</TableHead>
+                <TableHead className="text-right">Aksi</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -244,6 +264,11 @@ export default function ReportMaster() {
                     <TableCell className="text-right font-medium">
                       {report.persentase}
                     </TableCell>
+                    <TableCell className="text-right">
+                      <Button variant="outline" size="sm" onClick={() => openDetail(report.id)}>
+                        <Eye size={14} className="mr-1" /> Detail
+                      </Button>
+                    </TableCell>
                   </TableRow>
                 ))
               )}
@@ -251,6 +276,62 @@ export default function ReportMaster() {
           </Table>
         </CardContent>
       </Card>
+
+      {/* Detail Modal */}
+      {detailModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden">
+            <div className="flex items-center justify-between p-6 border-b border-slate-100">
+              <div>
+                <h3 className="text-lg font-bold text-slate-800">Detail Presensi</h3>
+                {!detailLoading && detailData && (
+                  <p className="text-sm text-slate-500">{detailData.lecturer?.name} - {detailData.period}</p>
+                )}
+              </div>
+              <Button variant="outline" size="icon" onClick={() => setDetailModalOpen(false)}>
+                <X size={18} />
+              </Button>
+            </div>
+            <div className="p-6 overflow-y-auto">
+              {detailLoading ? (
+                <div className="h-32 flex items-center justify-center text-slate-500 animate-pulse">Memuat detail...</div>
+              ) : !detailData || !detailData.data || detailData.data.length === 0 ? (
+                <EmptyState title="Tidak Ada Data" description="Tidak ada rekaman presensi harian pada periode ini." />
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Tanggal</TableHead>
+                      <TableHead>Masuk</TableHead>
+                      <TableHead>Pulang</TableHead>
+                      <TableHead>Lokasi Masuk</TableHead>
+                      <TableHead>Status</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {detailData.data.map((record) => (
+                      <TableRow key={record.id}>
+                        <TableCell className="font-medium">{record.date}</TableCell>
+                        <TableCell>{record.checkIn}</TableCell>
+                        <TableCell>{record.checkOut}</TableCell>
+                        <TableCell>{record.location}</TableCell>
+                        <TableCell>
+                           <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                              ${record.status === 'HADIR' ? 'bg-emerald-100 text-emerald-800' : 
+                                record.status === 'TERLAMBAT' ? 'bg-amber-100 text-amber-800' : 
+                                'bg-rose-100 text-rose-800'}`}>
+                              {record.status}
+                           </span>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

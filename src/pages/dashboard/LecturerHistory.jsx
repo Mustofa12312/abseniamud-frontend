@@ -7,22 +7,27 @@ import { EmptyState } from "../../components/ui/EmptyState"
 
 export default function LecturerHistory() {
   const [history, setHistory] = useState([])
+  const [summary, setSummary] = useState(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    const fetchHistory = async () => {
+    const fetchData = async () => {
       try {
-        const res = await attendanceService.getHistory()
-        if (res.success) {
-          setHistory(res.data)
-        }
+        const [historyRes, summaryRes] = await Promise.all([
+          attendanceService.getHistory(),
+          attendanceService.getSummary()
+        ])
+        
+        if (historyRes.success) setHistory(historyRes.data)
+        if (summaryRes.success) setSummary(summaryRes.data)
+        
       } catch (err) {
-        console.error("Failed to load history", err)
+        console.error("Failed to load data", err)
       } finally {
         setLoading(false)
       }
     }
-    fetchHistory()
+    fetchData()
   }, [])
 
   const getStatusColor = (status) => {
@@ -41,10 +46,34 @@ export default function LecturerHistory() {
           <CalendarDays size={20} />
         </div>
         <div>
-          <h1 className="text-xl font-bold text-slate-800">Riwayat Presensi</h1>
-          <p className="text-sm text-slate-500">30 Hari Terakhir</p>
+          <h1 className="text-xl font-bold text-slate-800">Riwayat & Rekap</h1>
+          <p className="text-sm text-slate-500">{summary?.period || 'Bulan Ini'}</p>
         </div>
       </div>
+
+      {/* Summary Cards */}
+      {!loading && summary && (
+        <div className="grid grid-cols-2 gap-4 mb-6">
+          <div className="bg-emerald-50 border border-emerald-100 rounded-2xl p-4 flex flex-col justify-center">
+            <p className="text-emerald-800 font-medium text-sm mb-1">Hadir</p>
+            <p className="text-3xl font-bold text-emerald-600">{summary.hadir}</p>
+          </div>
+          <div className="bg-amber-50 border border-amber-100 rounded-2xl p-4 flex flex-col justify-center">
+            <p className="text-amber-800 font-medium text-sm mb-1">Terlambat</p>
+            <p className="text-3xl font-bold text-amber-600">{summary.terlambat}</p>
+          </div>
+          <div className="bg-red-50 border border-red-100 rounded-2xl p-4 flex flex-col justify-center">
+            <p className="text-red-800 font-medium text-sm mb-1">Tidak Hadir</p>
+            <p className="text-3xl font-bold text-red-600">{summary.tidak_hadir}</p>
+          </div>
+          <div className="bg-blue-50 border border-blue-100 rounded-2xl p-4 flex flex-col justify-center">
+            <p className="text-blue-800 font-medium text-sm mb-1">Total</p>
+            <p className="text-3xl font-bold text-blue-600">{summary.total}</p>
+          </div>
+        </div>
+      )}
+
+      <h2 className="text-lg font-bold text-slate-800 mb-4">Riwayat Harian</h2>
 
       <div className="space-y-4">
         {loading ? (
