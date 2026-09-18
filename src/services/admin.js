@@ -57,11 +57,13 @@ export const adminService = {
   },
   
   approveCorrection: async (id) => {
-    return new Promise(resolve => setTimeout(() => resolve({ success: true, message: "Koreksi berhasil disetujui." }), 500));
+    const response = await api.post(`/admin/corrections/${id}/approve`);
+    return response.data;
   },
   
   rejectCorrection: async (id) => {
-    return new Promise(resolve => setTimeout(() => resolve({ success: true, message: "Koreksi berhasil ditolak." }), 500));
+    const response = await api.post(`/admin/corrections/${id}/reject`);
+    return response.data;
   },
   
   getAuditLogs: async () => {

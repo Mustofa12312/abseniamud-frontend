@@ -202,7 +202,7 @@ export default function Monitoring() {
                     <div>
                       <p className="text-sm font-medium text-slate-700">Lokasi Presensi</p>
                       <p className="text-sm text-slate-500">{selectedRecord.location}</p>
-                      <p className="text-xs text-slate-400 font-mono mt-1">-7.12345, 112.98765 (Mock GPS)</p>
+                      <p className="text-xs text-slate-400 font-mono mt-1">Koordinat dari perangkat</p>
                     </div>
                   </div>
                   
@@ -210,8 +210,12 @@ export default function Monitoring() {
                     <Smartphone size={18} className="text-slate-400 mt-0.5 shrink-0" />
                     <div>
                       <p className="text-sm font-medium text-slate-700">Perangkat</p>
-                      <p className="text-sm text-slate-500">Google Chrome di Windows 10</p>
-                      <p className="text-xs text-slate-400 font-mono mt-1">IP: 192.168.1.100</p>
+                      <p className="text-sm text-slate-500 break-words max-w-[280px]">
+                        {selectedRecord.user_agent || "Tidak diketahui"}
+                      </p>
+                      <p className="text-xs text-slate-400 font-mono mt-1">
+                        IP: {selectedRecord.ip_address || "Tidak diketahui"}
+                      </p>
                     </div>
                   </div>
                 </div>

@@ -10,6 +10,11 @@ export const authService = {
     const response = await api.get('/me');
     return response.data;
   },
+
+  updateProfile: async (data) => {
+    const response = await api.put('/me', data);
+    return response.data;
+  },
   
   logout: async () => {
     const response = await api.post('/auth/logout');
