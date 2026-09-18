@@ -123,6 +123,7 @@ export default function ReportMaster() {
               onChange={(e) => setSelectedMonth(e.target.value)}
               className="h-9 px-3 border border-slate-300 rounded-md text-sm bg-white focus:ring-2 focus:ring-brand-500 focus:outline-none"
             >
+              <option value="all">Semua Bulan (Tahunan)</option>
               <option value="1">Januari</option>
               <option value="2">Februari</option>
               <option value="3">Maret</option>

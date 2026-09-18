@@ -71,6 +71,20 @@ export const adminService = {
     return response.data;
   },
 
+  exportLecturers: async () => {
+    const response = await api.get('/admin/lecturers/export', { responseType: 'blob' });
+    return response.data;
+  },
+
+  importLecturers: async (formData) => {
+    const response = await api.post('/admin/lecturers/import', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    });
+    return response.data;
+  },
+
   getUsers: async () => {
     const response = await api.get('/admin/users');
     return response.data;
