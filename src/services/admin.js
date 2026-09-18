@@ -31,6 +31,15 @@ export const adminService = {
     return response.data;
   },
 
+  exportReports: async (month, year) => {
+    let url = '/admin/reports/export';
+    if (month && year) {
+        url += `?month=${month}&year=${year}`;
+    }
+    const response = await api.get(url, { responseType: 'blob' });
+    return response.data;
+  },
+
   
   getSettings: async () => {
     const response = await api.get('/admin/settings');
@@ -66,15 +75,18 @@ export const adminService = {
   },
 
   createUser: async (data) => {
-    return new Promise(resolve => setTimeout(() => resolve({ success: true, message: "Pengguna berhasil ditambahkan", data: { id: Date.now(), ...data } }), 500));
+    const response = await api.post('/admin/users', data);
+    return response.data;
   },
 
   updateUser: async (id, data) => {
-    return new Promise(resolve => setTimeout(() => resolve({ success: true, message: "Pengguna berhasil diperbarui", data: { id, ...data } }), 500));
+    const response = await api.put(`/admin/users/${id}`, data);
+    return response.data;
   },
 
   deleteUser: async (id) => {
-    return new Promise(resolve => setTimeout(() => resolve({ success: true, message: "Pengguna berhasil dihapus" }), 500));
+    const response = await api.delete(`/admin/users/${id}`);
+    return response.data;
   },
 
 

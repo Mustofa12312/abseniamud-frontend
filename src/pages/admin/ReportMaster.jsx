@@ -12,6 +12,7 @@ export default function ReportMaster() {
   const [reports, setReports] = useState([])
   const [periodStr, setPeriodStr] = useState("")
   const [loading, setLoading] = useState(true)
+  const [exporting, setExporting] = useState(false)
   
   const currentDate = new Date()
   const [selectedMonth, setSelectedMonth] = useState(currentDate.getMonth() + 1)
@@ -55,43 +56,28 @@ export default function ReportMaster() {
     fetchReports()
   }, [selectedMonth, selectedYear])
 
-  const handleExportCSV = () => {
+  const handleExportCSV = async () => {
     if (reports.length === 0) {
       error("Tidak ada data untuk diekspor pada periode ini.")
       return
     }
 
-    // Tentukan headers CSV
-    const headers = ["Nama Dosen", "NIDN", "Total Hadir", "Total Terlambat", "Total Alpa", "Persentase Kehadiran"]
-    
-    // Konversi baris data ke format CSV
-    const csvRows = []
-    csvRows.push(headers.join(",")) // Baris header
-
-    for (const row of reports) {
-      const values = [
-        `"${row.name}"`, // Quote untuk menghindari error jika ada koma di nama
-        `"${row.nidn}"`,
-        row.hadir,
-        row.terlambat,
-        row.alpha,
-        `"${row.persentase}"`
-      ]
-      csvRows.push(values.join(","))
+    setExporting(true)
+    try {
+      const blob = await adminService.exportReports(selectedMonth, selectedYear)
+      const url = window.URL.createObjectURL(blob)
+      const link = document.createElement("a")
+      link.href = url
+      link.setAttribute("download", `Laporan_Absensi_${selectedYear}_${selectedMonth}.csv`)
+      document.body.appendChild(link)
+      link.click()
+      link.parentNode.removeChild(link)
+      window.URL.revokeObjectURL(url)
+    } catch (err) {
+      error("Gagal mengekspor data laporan.")
+    } finally {
+      setExporting(false)
     }
-
-    // Gabungkan dengan newline
-    const csvContent = csvRows.join("\n")
-    
-    // Buat Blob dan trigger download
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" })
-    const url = URL.createObjectURL(blob)
-    const link = document.createElement("a")
-    link.href = url
-    link.setAttribute("download", `Rekap_Presensi_IAIMU_${periodStr.replace(" ", "_")}.csv`)
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
   }
 
   const handleExportPDF = () => {
@@ -100,56 +86,8 @@ export default function ReportMaster() {
       return
     }
     
-    const printWindow = window.open('', '_blank')
-    const html = `
-      <html>
-        <head>
-          <title>Laporan Presensi ${periodStr}</title>
-          <style>
-            body { font-family: sans-serif; padding: 20px; }
-            h2 { text-align: center; color: #333; }
-            p { text-align: center; color: #666; margin-bottom: 20px; }
-            table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-            th, td { border: 1px solid #ddd; padding: 8px; text-align: center; font-size: 14px; }
-            th { background-color: #f8f9fa; }
-            .left { text-align: left; }
-          </style>
-        </head>
-        <body>
-          <h2>Laporan Presensi Dosen IAIMU</h2>
-          <p>Periode: ${periodStr}</p>
-          <table>
-            <thead>
-              <tr>
-                <th>Nama Dosen</th>
-                <th>NIDN</th>
-                <th>Total Hadir</th>
-                <th>Total Terlambat</th>
-                <th>Total Alpa</th>
-                <th>Persentase</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${reports.map(r => `
-                <tr>
-                  <td class="left">${r.name}</td>
-                  <td>${r.nidn}</td>
-                  <td>${r.hadir}</td>
-                  <td>${r.terlambat}</td>
-                  <td>${r.alpha}</td>
-                  <td>${r.persentase}</td>
-                </tr>
-              `).join('')}
-            </tbody>
-          </table>
-          <script>
-            window.onload = function() { window.print(); window.close(); }
-          </script>
-        </body>
-      </html>
-    `
-    printWindow.document.write(html)
-    printWindow.document.close()
+    // Panggil print bawaan browser
+    window.print()
   }
 
   // Generate opsi tahun (misal: dari tahun lalu hingga tahun depan)
@@ -168,8 +106,8 @@ export default function ReportMaster() {
           <Button onClick={handleExportPDF} variant="outline" className="flex items-center gap-2 text-slate-700 hover:bg-slate-100">
             <Download size={18} /> PDF
           </Button>
-          <Button onClick={handleExportCSV} className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white">
-            <FileSpreadsheet size={18} /> Export Excel (CSV)
+          <Button onClick={handleExportCSV} disabled={exporting} className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white">
+            <FileSpreadsheet size={18} /> {exporting ? 'Mengekspor...' : 'Export Excel (CSV)'}
           </Button>
         </div>
       </div>

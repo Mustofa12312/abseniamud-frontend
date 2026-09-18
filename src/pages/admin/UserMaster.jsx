@@ -49,13 +49,13 @@ export default function UserMaster() {
       if (editingUser) {
         const res = await adminService.updateUser(editingUser.id, formData)
         if (res.success) {
-          setUsers(users.map(u => u.id === editingUser.id ? { ...u, ...formData } : u))
+          fetchUsers()
           success("Pengguna berhasil diperbarui.")
         }
       } else {
         const res = await adminService.createUser(formData)
         if (res.success) {
-          setUsers([...users, { ...res.data, created_at: new Date().toISOString().split('T')[0] }])
+          fetchUsers()
           success("Pengguna berhasil ditambahkan.")
         }
       }
@@ -87,7 +87,7 @@ export default function UserMaster() {
       try {
         const res = await adminService.deleteUser(id)
         if (res.success) {
-          setUsers(users.filter(u => u.id !== id))
+          fetchUsers()
           success("Pengguna berhasil dihapus.")
         }
       } catch (err) {

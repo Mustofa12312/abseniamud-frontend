@@ -62,3 +62,47 @@
     @apply bg-clip-text text-transparent bg-gradient-to-r from-brand-600 to-brand-400 dark:from-brand-400 dark:to-brand-200;
   }
 }
+
+/* Print Styles */
+@media print {
+  /* Sembunyikan elemen UI yang tidak perlu dicetak */
+  nav, sidebar, aside, header, .no-print, button, select, 
+  [role="navigation"], [data-sidebar], .sidebar,
+  .toast-viewport {
+    display: none !important;
+  }
+
+  /* Reset layout utama agar mengambil seluruh lebar kertas */
+  main, .main-content, #root, body {
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: white !important;
+  }
+
+  /* Hapus batas dan bayangan (shadow) dari kartu */
+  .card, .glass-card, .bg-white {
+    box-shadow: none !important;
+    border: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  /* Tabel agar bisa terlihat jelas */
+  table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+  }
+  
+  th, td {
+    border: 1px solid #ccc !important;
+    padding: 8px !important;
+    color: #000 !important;
+  }
+
+  /* Tambahkan tanda pada badge / chip (karena background color sering hilang di PDF) */
+  span.bg-emerald-50, span.bg-amber-50, span.bg-rose-50 {
+    border: 1px solid #ccc !important;
+    background-color: transparent !important;
+  }
+}
