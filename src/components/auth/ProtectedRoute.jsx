@@ -20,9 +20,11 @@ export default function ProtectedRoute({ allowedRoles }) {
   // Check roles based on ID or name. For now, assuming user.role_id maps to 'super_admin' (1) or 'admin_akademik' (2).
   // Ideally, user object from backend should return `role: { name: 'super_admin' }` or similar.
   // For safety, let's assume if it's admin routes, role_id must be 1 or 2.
-  const isSuperAdmin = user.role_id === 1;
-  const isAdminAkademik = user.role_id === 2;
-  const isDosen = user.role_id === 3;
+  // Parse role_id to integer in case backend returns it as string
+  const roleId = parseInt(user.role_id, 10);
+  const isSuperAdmin = roleId === 1;
+  const isAdminAkademik = roleId === 2; // Assuming admin_akademik is 2 if exists
+  const isDosen = roleId === 2 || roleId === 3; // Dosen is 2 in seeder
 
   const hasAccess = 
     (allowedRoles.includes('super_admin') && isSuperAdmin) || 

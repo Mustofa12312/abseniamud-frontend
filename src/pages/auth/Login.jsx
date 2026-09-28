@@ -25,7 +25,8 @@ export default function Login() {
       
       if (response.success) {
         // Arahkan berdasarkan role (contoh 1: super_admin, 2: dosen)
-        if (response.data.user.role_id === 1) {
+        const roleId = parseInt(response.data.user.role_id, 10);
+        if (roleId === 1) {
           navigate("/admin")
         } else {
           navigate("/lecturer")
