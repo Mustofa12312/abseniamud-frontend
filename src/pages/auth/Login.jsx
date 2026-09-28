@@ -54,77 +54,107 @@ export default function Login() {
       className="w-full"
     >
       <div className="text-center mb-8">
-        <div className="w-auto px-6 h-16 bg-white rounded-2xl mx-auto inline-flex items-center justify-center shadow-lg mb-4 shadow-brand-900/50">
-          <span className="text-2xl font-bold text-brand-600 tracking-wider">IAIMU</span>
-        </div>
-        <h1 className="text-3xl font-bold text-white mb-2 tracking-tight">Selamat Datang</h1>
-        <p className="text-brand-100">Sistem Presensi Geofencing</p>
+        <motion.div 
+          initial={{ scale: 0.9, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ delay: 0.2, duration: 0.5 }}
+          className="w-auto px-8 py-4 bg-white rounded-3xl mx-auto inline-flex items-center justify-center shadow-lg mb-6 shadow-brand-900/50"
+        >
+          <img src="/iaimulogo.png" alt="Logo IAIMU" className="h-24 w-auto object-contain" />
+        </motion.div>
+        <motion.h1 
+          initial={{ y: 10, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ delay: 0.3 }}
+          className="text-3xl font-bold text-white mb-2 tracking-tight"
+        >
+          Selamat Datang
+        </motion.h1>
+        <motion.p 
+          initial={{ y: 10, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ delay: 0.4 }}
+          className="text-brand-100"
+        >
+          Sistem Presensi Geofencing
+        </motion.p>
       </div>
 
-      <Card className="border-0 shadow-2xl bg-white/95 backdrop-blur-md relative overflow-hidden">
-        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-brand-400 to-teal-400"></div>
-        <CardHeader className="space-y-1 pb-4">
-          <CardTitle className="text-2xl text-slate-800">Masuk Akun</CardTitle>
-          <CardDescription className="text-slate-500">
-            Silakan masukkan email dan password Anda
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {error && (
-            <div className="mb-4 p-3 rounded-lg bg-red-50 text-red-600 text-sm flex items-start gap-2">
-              <AlertCircle size={16} className="mt-0.5 shrink-0" />
-              <p>{error}</p>
-            </div>
-          )}
-          
-          <form onSubmit={handleLogin} className="space-y-4">
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-slate-700">Email atau NIDN</label>
-              <Input
-                type="text"
-                placeholder="ahmad@iaimu.ac.id"
-                icon={Mail}
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-slate-700">Password</label>
-              <Input
-                type="password"
-                placeholder="••••••••"
-                icon={Lock}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-              />
-            </div>
+      <motion.div
+        initial={{ y: 20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ delay: 0.5, duration: 0.5 }}
+      >
+        <Card className="border-0 shadow-2xl bg-white/95 backdrop-blur-md relative overflow-hidden">
+          <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-brand-400 to-teal-400"></div>
+          <CardHeader className="space-y-1 pb-4">
+            <CardTitle className="text-2xl text-slate-800">Masuk Akun</CardTitle>
+            <CardDescription className="text-slate-500">
+              Silakan masukkan email dan password Anda
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {error && (
+              <div className="mb-4 p-3 rounded-lg bg-red-50 text-red-600 text-sm flex items-start gap-2">
+                <AlertCircle size={16} className="mt-0.5 shrink-0" />
+                <p>{error}</p>
+              </div>
+            )}
             
-            <Button 
-              type="submit" 
-              className="w-full mt-2" 
-              size="lg"
-              disabled={isLoading}
-            >
-              {isLoading ? (
-                <div className="flex items-center gap-2">
-                  <div className="w-5 h-5 rounded-full border-2 border-white/30 border-t-white animate-spin"></div>
-                  Memproses...
-                </div>
-              ) : (
-                <div className="flex items-center gap-2">
-                  <LogIn size={18} /> Masuk
-                </div>
-              )}
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
+            <form onSubmit={handleLogin} className="space-y-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-slate-700">Email atau NIDN</label>
+                <Input
+                  type="text"
+                  placeholder="ahmad@iaimu.ac.id"
+                  icon={Mail}
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-slate-700">Password</label>
+                <Input
+                  type="password"
+                  placeholder="••••••••"
+                  icon={Lock}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                />
+              </div>
+              
+              <Button 
+                type="submit" 
+                className="w-full mt-2" 
+                size="lg"
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <div className="flex items-center gap-2">
+                    <div className="w-5 h-5 rounded-full border-2 border-white/30 border-t-white animate-spin"></div>
+                    Memproses...
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <LogIn size={18} /> Masuk
+                  </div>
+                )}
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+      </motion.div>
 
-      <p className="text-center mt-8 text-brand-200/60 text-sm">
+      <motion.p 
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.8 }}
+        className="text-center mt-8 text-brand-200/60 text-sm"
+      >
         &copy; 2026 Institut Agama Islam Miftahul Ulum
-      </p>
+      </motion.p>
     </motion.div>
   )
 }

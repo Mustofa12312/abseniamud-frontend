@@ -7,6 +7,7 @@ import { EmptyState } from "../../components/ui/EmptyState"
 export default function AdminDashboard() {
   const [stats, setStats] = useState([])
   const [recentActivity, setRecentActivity] = useState([])
+  const [chartData, setChartData] = useState([])
   const [loading, setLoading] = useState(true)
 
   const icons = [Users, UserCheck, Clock, Map]
@@ -31,6 +32,7 @@ export default function AdminDashboard() {
           }))
           setStats(mappedStats)
           setRecentActivity(res.data.recent_activity)
+          setChartData(res.data.chart_data || [])
         }
       } catch (err) {
         console.error("Failed to load dashboard stats", err)
@@ -77,25 +79,24 @@ export default function AdminDashboard() {
           </CardHeader>
           <CardContent>
             <div className="h-[300px] w-full bg-slate-50 rounded-xl flex items-end justify-around border border-dashed border-slate-200 p-4 pt-8 text-slate-400 gap-2">
-              {/* CSS Bar Chart Simulation */}
-              {[
-                { day: 'Sen', value: 80 },
-                { day: 'Sel', value: 95 },
-                { day: 'Rab', value: 85 },
-                { day: 'Kam', value: 60 },
-                { day: 'Jum', value: 90 }
-              ].map((item, idx) => (
-                <div key={idx} className="flex flex-col items-center gap-2 h-full justify-end w-full max-w-[50px] group">
-                  <div className="text-xs font-medium text-slate-500 opacity-0 group-hover:opacity-100 transition-opacity">
-                    {item.value}%
+              {loading ? (
+                <div className="w-full h-full flex items-center justify-center animate-pulse">Memuat grafik...</div>
+              ) : chartData.length > 0 ? (
+                chartData.map((item, idx) => (
+                  <div key={idx} className="flex flex-col items-center gap-2 h-full justify-end w-full max-w-[50px] group">
+                    <div className="text-xs font-medium text-slate-500 opacity-0 group-hover:opacity-100 transition-opacity">
+                      {item.value}%
+                    </div>
+                    <div 
+                      className="w-full bg-brand-500 rounded-t-md transition-all hover:bg-brand-600 cursor-pointer"
+                      style={{ height: `${item.value}%` }}
+                    ></div>
+                    <div className="text-xs font-semibold text-slate-600 mt-1">{item.day}</div>
                   </div>
-                  <div 
-                    className="w-full bg-brand-500 rounded-t-md transition-all hover:bg-brand-600 cursor-pointer"
-                    style={{ height: `${item.value}%` }}
-                  ></div>
-                  <div className="text-xs font-semibold text-slate-600 mt-1">{item.day}</div>
-                </div>
-              ))}
+                ))
+              ) : (
+                <div className="w-full h-full flex items-center justify-center">Belum ada data minggu ini.</div>
+              )}
             </div>
           </CardContent>
         </Card>
