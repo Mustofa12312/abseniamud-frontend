@@ -58,9 +58,9 @@ export default function Login() {
           initial={{ scale: 0.9, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           transition={{ delay: 0.2, duration: 0.5 }}
-          className="w-auto px-8 py-4 bg-white rounded-3xl mx-auto inline-flex items-center justify-center shadow-lg mb-6 shadow-brand-900/50"
+          className="w-auto mx-auto inline-flex items-center justify-center mb-4"
         >
-          <img src="/iaimulogo.png" alt="Logo IAIMU" className="h-24 w-auto object-contain" />
+          <img src="/iaimulogo.png" alt="Logo IAIMU" className="h-28 w-auto object-contain drop-shadow-md" />
         </motion.div>
         <motion.h1 
           initial={{ y: 10, opacity: 0 }}
