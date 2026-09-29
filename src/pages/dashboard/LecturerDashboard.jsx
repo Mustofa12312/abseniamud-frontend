@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react"
-import { MapPin, Clock, Calendar, CheckCircle2, XCircle, LogIn, LogOut, AlertCircle, Loader2 } from "lucide-react"
+import { MapPin, Clock, Calendar, CheckCircle2, XCircle, LogIn, LogOut, AlertCircle, Loader2, PartyPopper } from "lucide-react"
+import { motion, AnimatePresence } from "framer-motion"
 import { Button } from "../../components/ui/Button"
 import { Card, CardContent } from "../../components/ui/Card"
 import { useAuth } from "../../contexts/AuthContext"
@@ -22,6 +23,9 @@ export default function LecturerDashboard() {
   const [todayStatus, setTodayStatus] = useState(null)   // null = loading
   const [statusLoading, setStatusLoading] = useState(true)
   const [actionLoading, setActionLoading] = useState(false)
+  
+  // Success Modal State
+  const [successModal, setSuccessModal] = useState(null)
 
   // Real-time clock
   useEffect(() => {
@@ -57,8 +61,19 @@ export default function LecturerDashboard() {
       const res = await attendanceService.checkIn(coords)
 
       if (res.success) {
-        success(`Check-in berhasil! ${res.data?.location ? `📍 ${res.data.location}` : ''}`)
         await fetchTodayStatus() // re-fetch to update button state
+        
+        // Show professional success modal
+        const now = new Date()
+        setSuccessModal({
+          type: 'masuk',
+          time: now.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" }),
+          location: res.data?.location || (coordinates ? `Lokasi terbaca (±${Math.round(coordinates.accuracy)}m)` : 'Lokasi Anda'),
+          message: 'Berhasil melakukan presensi masuk.'
+        })
+        
+        // Auto close after 3 seconds
+        setTimeout(() => setSuccessModal(null), 3500)
       }
     } catch (err) {
       const msg =
@@ -77,8 +92,17 @@ export default function LecturerDashboard() {
       const res = await attendanceService.checkOut(coords)
 
       if (res.success) {
-        success("Check-out berhasil! Selamat beristirahat 👋")
         await fetchTodayStatus()
+        
+        const now = new Date()
+        setSuccessModal({
+          type: 'pulang',
+          time: now.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" }),
+          location: res.data?.location || (coordinates ? `Lokasi terbaca (±${Math.round(coordinates.accuracy)}m)` : 'Lokasi Anda'),
+          message: 'Presensi pulang berhasil. Selamat beristirahat!'
+        })
+        
+        setTimeout(() => setSuccessModal(null), 3500)
       }
     } catch (err) {
       const msg =
@@ -224,6 +248,70 @@ export default function LecturerDashboard() {
           <span>Presensi hari ini selesai. Sampai jumpa besok!</span>
         </div>
       )}
+
+      {/* Success Modal Overlay */}
+      <AnimatePresence>
+        {successModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm"
+          >
+            <motion.div
+              initial={{ scale: 0.9, y: 20, opacity: 0 }}
+              animate={{ scale: 1, y: 0, opacity: 1 }}
+              exit={{ scale: 0.9, y: 20, opacity: 0 }}
+              transition={{ type: "spring", damping: 25, stiffness: 300 }}
+              className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl overflow-hidden w-full max-w-sm"
+            >
+              <div className={`p-8 text-center text-white ${successModal.type === 'masuk' ? 'bg-gradient-to-br from-emerald-500 to-teal-600' : 'bg-gradient-to-br from-blue-500 to-indigo-600'}`}>
+                <motion.div 
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ delay: 0.2, type: "spring", bounce: 0.5 }}
+                  className="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4 backdrop-blur-md"
+                >
+                  <CheckCircle2 size={40} className="text-white" />
+                </motion.div>
+                <h2 className="text-2xl font-bold tracking-tight mb-1">
+                  {successModal.type === 'masuk' ? 'Check-in Sukses!' : 'Check-out Sukses!'}
+                </h2>
+                <p className="text-white/80 text-sm">
+                  {successModal.message}
+                </p>
+              </div>
+              
+              <div className="p-6 space-y-4">
+                <div className="flex items-center justify-between py-3 border-b border-slate-100 dark:border-slate-800">
+                  <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400">
+                    <Clock size={16} />
+                    <span className="text-sm">Waktu {successModal.type === 'masuk' ? 'Masuk' : 'Pulang'}</span>
+                  </div>
+                  <span className="font-bold text-slate-800 dark:text-slate-100">{successModal.time}</span>
+                </div>
+                
+                <div className="flex items-center justify-between py-3">
+                  <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400">
+                    <MapPin size={16} />
+                    <span className="text-sm">Lokasi</span>
+                  </div>
+                  <span className="font-medium text-slate-800 dark:text-slate-100 text-sm text-right max-w-[150px] truncate">
+                    {successModal.location}
+                  </span>
+                </div>
+                
+                <Button 
+                  className="w-full mt-4 rounded-xl h-12 text-base font-semibold"
+                  onClick={() => setSuccessModal(null)}
+                >
+                  Tutup
+                </Button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }
