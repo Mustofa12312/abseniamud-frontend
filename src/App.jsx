@@ -28,6 +28,8 @@ import CorrectionMaster from "./pages/admin/CorrectionMaster"
 import AuditLogMaster from "./pages/admin/AuditLogMaster"
 import UserMaster from "./pages/admin/UserMaster"
 import StaffMaster from "./pages/admin/StaffMaster"
+import AdminAnnouncements from "./pages/admin/AdminAnnouncements"
+import AdminLeaves from "./pages/admin/AdminLeaves"
 
 function App() {
   return (
@@ -72,6 +74,8 @@ function App() {
               <Route path="corrections" element={<CorrectionMaster />} />
               <Route path="audit-logs" element={<AuditLogMaster />} />
               <Route path="settings" element={<SystemSettings />} />
+              <Route path="announcements" element={<AdminAnnouncements />} />
+              <Route path="leaves" element={<AdminLeaves />} />
             </Route>
           </Route>
         </Routes>

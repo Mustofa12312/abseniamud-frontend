@@ -24,6 +24,8 @@ export default function AdminLayout() {
         { icon: LayoutDashboard, label: "Dashboard", path: "/admin" },
         { icon: ShieldCheck, label: "Monitoring Presensi", path: "/admin/monitoring" },
         { icon: FileText, label: "Koreksi Presensi", path: "/admin/corrections" },
+        { icon: Bell, label: "Pengumuman", path: "/admin/announcements" },
+        { icon: FileText, label: "Persetujuan Izin", path: "/admin/leaves" },
       ]
     },
     {

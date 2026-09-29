@@ -1,11 +1,13 @@
 import { useState, useEffect, useCallback } from "react"
-import { MapPin, Clock, Calendar, CheckCircle2, XCircle, LogIn, LogOut, AlertCircle, Loader2, PartyPopper, CheckCircle, FileX, Info } from "lucide-react"
+import { MapPin, Clock, Calendar, CheckCircle2, XCircle, LogIn, LogOut, AlertCircle, Loader2, PartyPopper, CheckCircle, FileX, Info, Send, Megaphone, ChevronRight } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import { Button } from "../../components/ui/Button"
+import { Input } from "../../components/ui/Input"
 import { Card, CardContent } from "../../components/ui/Card"
 import { useAuth } from "../../contexts/AuthContext"
 import { useGeolocation } from "../../hooks/useGeolocation"
 import { attendanceService } from "../../services/attendance"
+import { featureService } from "../../services/features"
 import { useToast } from "../../contexts/ToastContext"
 
 // Attendance status from API:
@@ -27,6 +29,12 @@ export default function LecturerDashboard() {
   
   // Success Modal State
   const [successModal, setSuccessModal] = useState(null)
+
+  // Announcements & Features State
+  const [announcements, setAnnouncements] = useState([])
+  const [showLeaveModal, setShowLeaveModal] = useState(false)
+  const [leaveForm, setLeaveForm] = useState({ type: 'Izin', start_date: '', end_date: '', reason: '' })
+  const [submitLeaveLoading, setSubmitLeaveLoading] = useState(false)
 
   // Real-time clock
   useEffect(() => {
@@ -59,7 +67,16 @@ export default function LecturerDashboard() {
         if (res.success) setMonthlySummary(res.data);
       } catch (err) {}
     }
+    // Fetch Announcements
+    const fetchAnnouncements = async () => {
+      try {
+        const res = await featureService.getAnnouncements();
+        if (res.success) setAnnouncements(res.data);
+      } catch (err) {}
+    }
+    
     fetchSummary()
+    fetchAnnouncements()
   }, [fetchTodayStatus])
 
   // ─── Handlers ──────────────────────────────────────────────────────────────
@@ -121,6 +138,23 @@ export default function LecturerDashboard() {
       error(msg)
     } finally {
       setActionLoading(false)
+    }
+  }
+
+  const handleSubmitLeave = async (e) => {
+    e.preventDefault()
+    try {
+      setSubmitLeaveLoading(true)
+      const res = await featureService.submitLeave(leaveForm)
+      if (res.success) {
+        success(res.message || "Pengajuan izin/cuti berhasil dikirim.")
+        setShowLeaveModal(false)
+        setLeaveForm({ type: 'Izin', start_date: '', end_date: '', reason: '' })
+      }
+    } catch (err) {
+      error(err?.response?.data?.message || "Gagal mengirim pengajuan.")
+    } finally {
+      setSubmitLeaveLoading(false)
     }
   }
 
@@ -299,6 +333,39 @@ export default function LecturerDashboard() {
         </div>
       )}
 
+      {/* Announcements Section */}
+      {announcements.length > 0 && (
+        <div className="space-y-3 mt-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-sm font-bold text-slate-700">Informasi Kampus</h2>
+          </div>
+          <div className="flex overflow-x-auto pb-4 -mx-4 px-4 snap-x gap-3 hide-scrollbar">
+            {announcements.map((ann, idx) => (
+              <div key={idx} className="snap-center shrink-0 w-[85%] bg-gradient-to-br from-indigo-500 to-blue-600 rounded-2xl p-4 text-white shadow-md relative overflow-hidden">
+                <div className="absolute -right-4 -top-4 w-24 h-24 bg-white/10 rounded-full blur-2xl"></div>
+                <div className="flex items-start gap-3 relative z-10">
+                  <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center shrink-0">
+                    <Megaphone size={16} className="text-white" />
+                  </div>
+                  <div>
+                    {ann.is_important && (
+                      <span className="inline-block px-2 py-0.5 bg-red-500 text-white text-[10px] font-bold rounded-full mb-1 uppercase tracking-wider">
+                        Penting
+                      </span>
+                    )}
+                    <h3 className="font-bold text-sm leading-tight mb-1">{ann.title}</h3>
+                    <p className="text-xs text-blue-100 line-clamp-2 leading-relaxed">{ann.content}</p>
+                    <p className="text-[10px] text-blue-200 mt-2 opacity-80">
+                      Oleh: {ann.creator?.name || 'Admin'} • {new Date(ann.created_at).toLocaleDateString("id-ID", { day: 'numeric', month: 'short' })}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Quick Menu (App-like features) */}
       <div className="space-y-3 mt-4">
         <h2 className="text-sm font-bold text-slate-700">Menu Cepat</h2>
@@ -315,7 +382,10 @@ export default function LecturerDashboard() {
             </div>
           </button>
           
-          <button className="w-full flex items-center justify-between p-4 hover:bg-slate-50 active:bg-slate-100 transition-colors">
+          <button 
+            onClick={() => setShowLeaveModal(true)}
+            className="w-full flex items-center justify-between p-4 hover:bg-slate-50 active:bg-slate-100 transition-colors"
+          >
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-purple-50 flex items-center justify-center">
                 <FileX size={18} className="text-purple-600" />
@@ -325,6 +395,7 @@ export default function LecturerDashboard() {
                 <p className="text-xs text-slate-500">Form pengajuan ketidakhadiran</p>
               </div>
             </div>
+            <ChevronRight size={16} className="text-slate-300" />
           </button>
 
           <button className="w-full flex items-center justify-between p-4 hover:bg-slate-50 active:bg-slate-100 transition-colors">
@@ -398,6 +469,115 @@ export default function LecturerDashboard() {
                   onClick={() => setSuccessModal(null)}
                 >
                   Tutup
+                </Button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Leave Request Modal */}
+      <AnimatePresence>
+        {showLeaveModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex flex-col justify-end p-0 bg-slate-900/40 backdrop-blur-sm sm:items-center sm:justify-center sm:p-4"
+            onClick={() => setShowLeaveModal(false)}
+          >
+            <motion.div
+              initial={{ y: "100%" }}
+              animate={{ y: 0 }}
+              exit={{ y: "100%" }}
+              transition={{ type: "spring", damping: 25, stiffness: 300 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-white w-full rounded-t-3xl sm:rounded-3xl shadow-[0_-10px_40px_-15px_rgba(0,0,0,0.3)] overflow-hidden max-w-md max-h-[90vh] flex flex-col border border-slate-100"
+            >
+              <div className="p-5 border-b border-slate-100 flex items-center justify-between shrink-0 bg-gradient-to-r from-slate-50 to-white">
+                <div>
+                  <h3 className="font-bold text-lg text-slate-800">Ajukan Izin / Cuti</h3>
+                  <p className="text-xs text-slate-500 mt-0.5">Isi form di bawah untuk pengajuan ketidakhadiran</p>
+                </div>
+                <button 
+                  onClick={() => setShowLeaveModal(false)}
+                  className="p-2 bg-slate-100 rounded-full text-slate-400 hover:bg-slate-200 hover:text-slate-600 transition-colors"
+                >
+                  <XCircle size={20} />
+                </button>
+              </div>
+              
+              <div className="p-6 overflow-y-auto">
+                <form id="leaveForm" onSubmit={handleSubmitLeave} className="space-y-5">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2">Jenis Pengajuan</label>
+                    <select 
+                      className="w-full border border-slate-200 rounded-xl px-4 py-3.5 text-sm focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none bg-white shadow-sm transition-all text-slate-700 font-medium"
+                      value={leaveForm.type}
+                      onChange={(e) => setLeaveForm({...leaveForm, type: e.target.value})}
+                      required
+                    >
+                      <option value="Izin">Izin</option>
+                      <option value="Sakit">Sakit</option>
+                      <option value="Cuti">Cuti</option>
+                    </select>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2">Dari Tanggal</label>
+                      <div className="relative">
+                        <input 
+                          type="date" 
+                          className="w-full border border-slate-200 rounded-xl pl-3 pr-2 py-3.5 text-sm focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none bg-white shadow-sm transition-all text-slate-700 font-medium"
+                          required 
+                          value={leaveForm.start_date}
+                          onChange={(e) => setLeaveForm({...leaveForm, start_date: e.target.value})}
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2">Sampai Tanggal</label>
+                      <div className="relative">
+                        <input 
+                          type="date" 
+                          className="w-full border border-slate-200 rounded-xl pl-3 pr-2 py-3.5 text-sm focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none bg-white shadow-sm transition-all text-slate-700 font-medium"
+                          required 
+                          value={leaveForm.end_date}
+                          onChange={(e) => setLeaveForm({...leaveForm, end_date: e.target.value})}
+                          min={leaveForm.start_date}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2">Alasan Lengkap</label>
+                    <textarea 
+                      required
+                      rows={4}
+                      className="w-full border border-slate-200 rounded-xl px-4 py-3.5 text-sm focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none bg-white shadow-sm transition-all text-slate-700 resize-none leading-relaxed"
+                      placeholder="Tuliskan alasan ketidakhadiran Anda secara detail..."
+                      value={leaveForm.reason}
+                      onChange={(e) => setLeaveForm({...leaveForm, reason: e.target.value})}
+                    ></textarea>
+                  </div>
+                </form>
+              </div>
+              
+              <div className="p-5 border-t border-slate-100 bg-slate-50/80 shrink-0">
+                <Button 
+                  type="submit"
+                  form="leaveForm"
+                  className="w-full h-14 rounded-2xl font-bold flex items-center justify-center gap-2 bg-gradient-to-r from-brand-600 to-teal-600 hover:from-brand-700 hover:to-teal-700 text-white shadow-lg shadow-brand-500/25 transition-all active:scale-[0.98]"
+                  disabled={submitLeaveLoading}
+                >
+                  {submitLeaveLoading ? (
+                    <Loader2 size={20} className="animate-spin" />
+                  ) : (
+                    <Send size={18} className="mr-1" />
+                  )}
+                  <span className="text-base tracking-wide">Kirim Pengajuan</span>
                 </Button>
               </div>
             </motion.div>
