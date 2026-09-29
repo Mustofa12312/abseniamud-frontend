@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react"
-import { MapPin, Clock, Calendar, CheckCircle2, XCircle, LogIn, LogOut, AlertCircle, Loader2, PartyPopper } from "lucide-react"
+import { MapPin, Clock, Calendar, CheckCircle2, XCircle, LogIn, LogOut, AlertCircle, Loader2, PartyPopper, CheckCircle, FileX, Info } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import { Button } from "../../components/ui/Button"
 import { Card, CardContent } from "../../components/ui/Card"
@@ -23,6 +23,7 @@ export default function LecturerDashboard() {
   const [todayStatus, setTodayStatus] = useState(null)   // null = loading
   const [statusLoading, setStatusLoading] = useState(true)
   const [actionLoading, setActionLoading] = useState(false)
+  const [monthlySummary, setMonthlySummary] = useState(null)
   
   // Success Modal State
   const [successModal, setSuccessModal] = useState(null)
@@ -50,6 +51,15 @@ export default function LecturerDashboard() {
 
   useEffect(() => {
     fetchTodayStatus()
+    // Fetch monthly summary
+    const fetchSummary = async () => {
+      try {
+        const now = new Date();
+        const res = await attendanceService.getSummary(now.getMonth() + 1, now.getFullYear());
+        if (res.success) setMonthlySummary(res.data);
+      } catch (err) {}
+    }
+    fetchSummary()
   }, [fetchTodayStatus])
 
   // ─── Handlers ──────────────────────────────────────────────────────────────
@@ -248,6 +258,88 @@ export default function LecturerDashboard() {
           <span>Presensi hari ini selesai. Sampai jumpa besok!</span>
         </div>
       )}
+
+      {/* Monthly Statistics Grid */}
+      {monthlySummary && (
+        <div className="space-y-3 mt-4">
+          <h2 className="text-sm font-bold text-slate-700">Statistik Bulan Ini</h2>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="bg-white border border-slate-100 shadow-sm rounded-2xl p-4 flex flex-col">
+              <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center mb-2">
+                <CheckCircle size={16} className="text-emerald-600" />
+              </div>
+              <span className="text-2xl font-bold text-slate-800">{monthlySummary.hadir}</span>
+              <span className="text-xs text-slate-500 font-medium">Hadir</span>
+            </div>
+            
+            <div className="bg-white border border-slate-100 shadow-sm rounded-2xl p-4 flex flex-col">
+              <div className="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center mb-2">
+                <Clock size={16} className="text-amber-600" />
+              </div>
+              <span className="text-2xl font-bold text-slate-800">{monthlySummary.terlambat}</span>
+              <span className="text-xs text-slate-500 font-medium">Terlambat</span>
+            </div>
+            
+            <div className="bg-white border border-slate-100 shadow-sm rounded-2xl p-4 flex flex-col">
+              <div className="w-8 h-8 rounded-full bg-red-100 flex items-center justify-center mb-2">
+                <XCircle size={16} className="text-red-600" />
+              </div>
+              <span className="text-2xl font-bold text-slate-800">{monthlySummary.tidak_hadir}</span>
+              <span className="text-xs text-slate-500 font-medium">Tidak Hadir (Alpa)</span>
+            </div>
+            
+            <div className="bg-white border border-slate-100 shadow-sm rounded-2xl p-4 flex flex-col">
+              <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center mb-2">
+                <FileX size={16} className="text-indigo-600" />
+              </div>
+              <span className="text-2xl font-bold text-slate-800">0</span>
+              <span className="text-xs text-slate-500 font-medium">Izin / Sakit</span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Quick Menu (App-like features) */}
+      <div className="space-y-3 mt-4">
+        <h2 className="text-sm font-bold text-slate-700">Menu Cepat</h2>
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden divide-y divide-slate-50">
+          <button className="w-full flex items-center justify-between p-4 hover:bg-slate-50 active:bg-slate-100 transition-colors">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center">
+                <Calendar size={18} className="text-blue-600" />
+              </div>
+              <div className="text-left">
+                <p className="text-sm font-semibold text-slate-800">Jadwal Mengajar</p>
+                <p className="text-xs text-slate-500">Lihat jadwal kelas Anda</p>
+              </div>
+            </div>
+          </button>
+          
+          <button className="w-full flex items-center justify-between p-4 hover:bg-slate-50 active:bg-slate-100 transition-colors">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-purple-50 flex items-center justify-center">
+                <FileX size={18} className="text-purple-600" />
+              </div>
+              <div className="text-left">
+                <p className="text-sm font-semibold text-slate-800">Ajukan Izin/Cuti</p>
+                <p className="text-xs text-slate-500">Form pengajuan ketidakhadiran</p>
+              </div>
+            </div>
+          </button>
+
+          <button className="w-full flex items-center justify-between p-4 hover:bg-slate-50 active:bg-slate-100 transition-colors">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-teal-50 flex items-center justify-center">
+                <Info size={18} className="text-teal-600" />
+              </div>
+              <div className="text-left">
+                <p className="text-sm font-semibold text-slate-800">Informasi Kampus</p>
+                <p className="text-xs text-slate-500">Pengumuman & kalender akademik</p>
+              </div>
+            </div>
+          </button>
+        </div>
+      </div>
 
       {/* Success Modal Overlay */}
       <AnimatePresence>
