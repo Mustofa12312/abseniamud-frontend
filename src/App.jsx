@@ -27,6 +27,7 @@ import LecturerCorrection from "./pages/dashboard/LecturerCorrection"
 import CorrectionMaster from "./pages/admin/CorrectionMaster"
 import AuditLogMaster from "./pages/admin/AuditLogMaster"
 import UserMaster from "./pages/admin/UserMaster"
+import StaffMaster from "./pages/admin/StaffMaster"
 
 function App() {
   return (
@@ -63,6 +64,7 @@ function App() {
               <Route path="faculties" element={<FacultyMaster />} />
               <Route path="courses" element={<CourseMaster />} />
               <Route path="lecturers" element={<LecturerMaster />} />
+              <Route path="staff" element={<StaffMaster />} />
               <Route path="positions" element={<PositionMaster />} />
               <Route path="assignments" element={<AssignmentMaster />} />
               <Route path="schedules" element={<ScheduleMaster />} />
