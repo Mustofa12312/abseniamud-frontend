@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react"
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../../components/ui/Card"
+import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/Card"
 import { Button } from "../../components/ui/Button"
 import { Input } from "../../components/ui/Input"
-import { Plus, Edit2, Trash2, Loader2, Search } from "lucide-react"
+import { Plus, Edit2, Trash2, Loader2, Search, CalendarCheck } from "lucide-react"
 import { scheduleService } from "../../services/schedule"
 import { useToast } from "../../contexts/ToastContext"
 
@@ -18,7 +18,11 @@ export default function PositionMaster() {
   const [deletingPosition, setDeletingPosition] = useState(null)
   const [submitting, setSubmitting] = useState(false)
   
-  const [formData, setFormData] = useState({ name: '' })
+  const [formData, setFormData] = useState({ 
+    name: '', 
+    requires_daily_attendance: false,
+    work_start_time: '' 
+  })
   const [searchQuery, setSearchQuery] = useState('')
 
   const fetchData = async () => {
@@ -39,13 +43,17 @@ export default function PositionMaster() {
 
   const handleOpenCreate = () => {
     setEditingPosition(null)
-    setFormData({ name: '' })
+    setFormData({ name: '', requires_daily_attendance: false, work_start_time: '' })
     setIsModalOpen(true)
   }
 
   const handleOpenEdit = (item) => {
     setEditingPosition(item)
-    setFormData({ name: item.name })
+    setFormData({ 
+      name: item.name,
+      requires_daily_attendance: !!item.requires_daily_attendance,
+      work_start_time: item.work_start_time || ''
+    })
     setIsModalOpen(true)
   }
 
@@ -55,7 +63,8 @@ export default function PositionMaster() {
   }
 
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value })
+    const value = e.target.type === 'checkbox' ? e.target.checked : e.target.value
+    setFormData({ ...formData, [e.target.name]: value })
   }
 
   const handleSubmit = async (e) => {
@@ -141,6 +150,8 @@ export default function PositionMaster() {
                 <tr>
                   <th className="px-6 py-4">No</th>
                   <th className="px-6 py-4">Nama Jabatan</th>
+                  <th className="px-6 py-4 text-center">Wajib Hadir Harian</th>
+                  <th className="px-6 py-4 text-center">Jam Masuk</th>
                   <th className="px-6 py-4 text-right">Aksi</th>
                 </tr>
               </thead>
@@ -163,6 +174,20 @@ export default function PositionMaster() {
                     <tr key={item.id} className="hover:bg-slate-50/50 transition-colors">
                       <td className="px-6 py-4">{index + 1}</td>
                       <td className="px-6 py-4 font-medium text-slate-800">{item.name}</td>
+                      <td className="px-6 py-4 text-center">
+                        {item.requires_daily_attendance ? (
+                          <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 text-emerald-700 px-2.5 py-0.5 text-xs font-medium">
+                            <CalendarCheck size={11} /> Ya
+                          </span>
+                        ) : (
+                          <span className="text-slate-400 text-xs">Tidak</span>
+                        )}
+                      </td>
+                      <td className="px-6 py-4 text-center text-sm">
+                        {item.requires_daily_attendance && item.work_start_time 
+                          ? item.work_start_time 
+                          : <span className="text-slate-400 text-xs">—</span>}
+                      </td>
                       <td className="px-6 py-4 text-right">
                         <div className="flex justify-end gap-2">
                           <Button variant="outline" size="sm" onClick={() => handleOpenEdit(item)} className="h-8 w-8 p-0 text-brand-600 hover:text-brand-700 hover:bg-brand-50 border-brand-200">
@@ -200,6 +225,37 @@ export default function PositionMaster() {
                     placeholder="Contoh: Kaprodi Sistem Informasi"
                     required 
                   />
+                </div>
+
+                {/* Daily attendance toggle */}
+                <div className="rounded-xl border border-slate-200 p-4 space-y-3">
+                  <label className="flex items-center gap-3 cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      name="requires_daily_attendance"
+                      checked={formData.requires_daily_attendance}
+                      onChange={handleChange}
+                      className="h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500"
+                    />
+                    <div>
+                      <p className="text-sm font-medium text-slate-700">Wajib hadir setiap hari kerja</p>
+                      <p className="text-xs text-slate-500">Pemegang jabatan ini wajib hadir Senin–Sabtu, terlepas dari jadwal mengajar.</p>
+                    </div>
+                  </label>
+
+                  {formData.requires_daily_attendance && (
+                    <div className="space-y-1.5 pl-7">
+                      <label className="text-sm font-medium text-slate-700">Jam Masuk Khusus (opsional)</label>
+                      <Input 
+                        type="time"
+                        name="work_start_time"
+                        value={formData.work_start_time}
+                        onChange={handleChange}
+                        placeholder="07:00"
+                      />
+                      <p className="text-xs text-slate-400">Kosongkan untuk menggunakan jam masuk default dari Pengaturan.</p>
+                    </div>
+                  )}
                 </div>
                 
                 <div className="flex gap-3 pt-4">
