@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react"
-import { MapPin, Clock, Calendar, CheckCircle2, XCircle, LogIn, LogOut, AlertCircle, Loader2, PartyPopper, CheckCircle, FileX, Info, Send, Megaphone, ChevronRight } from "lucide-react"
+import { MapPin, Clock, Calendar, CheckCircle2, XCircle, LogIn, LogOut, AlertCircle, Loader2, PartyPopper, CheckCircle, FileX, Info, Send, Megaphone, ChevronRight, BookOpen } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import { Button } from "../../components/ui/Button"
 import { Input } from "../../components/ui/Input"
@@ -35,6 +35,10 @@ export default function LecturerDashboard() {
   const [showLeaveModal, setShowLeaveModal] = useState(false)
   const [leaveForm, setLeaveForm] = useState({ type: 'Izin', start_date: '', end_date: '', reason: '' })
   const [submitLeaveLoading, setSubmitLeaveLoading] = useState(false)
+  
+  // Schedules State
+  const [schedules, setSchedules] = useState({})
+  const [showScheduleModal, setShowScheduleModal] = useState(false)
 
   // Real-time clock
   useEffect(() => {
@@ -74,9 +78,17 @@ export default function LecturerDashboard() {
         if (res.success) setAnnouncements(res.data);
       } catch (err) {}
     }
+    // Fetch Schedules
+    const fetchSchedules = async () => {
+      try {
+        const res = await featureService.getSchedules();
+        if (res.success) setSchedules(res.data);
+      } catch (err) {}
+    }
     
     fetchSummary()
     fetchAnnouncements()
+    fetchSchedules()
   }, [fetchTodayStatus])
 
   // ─── Handlers ──────────────────────────────────────────────────────────────
@@ -370,7 +382,10 @@ export default function LecturerDashboard() {
       <div className="space-y-3 mt-4">
         <h2 className="text-sm font-bold text-slate-700">Menu Cepat</h2>
         <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden divide-y divide-slate-50">
-          <button className="w-full flex items-center justify-between p-4 hover:bg-slate-50 active:bg-slate-100 transition-colors">
+          <button 
+            onClick={() => setShowScheduleModal(true)}
+            className="w-full flex items-center justify-between p-4 hover:bg-slate-50 active:bg-slate-100 transition-colors"
+          >
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center">
                 <Calendar size={18} className="text-blue-600" />
@@ -380,6 +395,7 @@ export default function LecturerDashboard() {
                 <p className="text-xs text-slate-500">Lihat jadwal kelas Anda</p>
               </div>
             </div>
+            <ChevronRight size={16} className="text-slate-300" />
           </button>
           
           <button 
@@ -579,6 +595,87 @@ export default function LecturerDashboard() {
                   )}
                   <span className="text-base tracking-wide">Kirim Pengajuan</span>
                 </Button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Schedule Modal */}
+      <AnimatePresence>
+        {showScheduleModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex flex-col justify-end p-0 bg-slate-900/40 backdrop-blur-sm sm:items-center sm:justify-center sm:p-4"
+            onClick={() => setShowScheduleModal(false)}
+          >
+            <motion.div
+              initial={{ y: "100%" }}
+              animate={{ y: 0 }}
+              exit={{ y: "100%" }}
+              transition={{ type: "spring", damping: 25, stiffness: 300 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-slate-50 w-full rounded-t-3xl sm:rounded-3xl shadow-[0_-10px_40px_-15px_rgba(0,0,0,0.3)] overflow-hidden max-w-md max-h-[90vh] flex flex-col border border-slate-100"
+            >
+              <div className="p-5 border-b border-slate-100 flex items-center justify-between shrink-0 bg-white">
+                <div>
+                  <h3 className="font-bold text-lg text-slate-800">Jadwal Mengajar</h3>
+                  <p className="text-xs text-slate-500 mt-0.5">Daftar kelas yang Anda ampu</p>
+                </div>
+                <button 
+                  onClick={() => setShowScheduleModal(false)}
+                  className="p-2 bg-slate-100 rounded-full text-slate-400 hover:bg-slate-200 hover:text-slate-600 transition-colors"
+                >
+                  <XCircle size={20} />
+                </button>
+              </div>
+              
+              <div className="p-4 overflow-y-auto space-y-5">
+                {Object.keys(schedules).length === 0 ? (
+                  <div className="text-center py-10">
+                    <Loader2 size={30} className="animate-spin mx-auto text-slate-300 mb-3" />
+                    <p className="text-sm text-slate-500">Memuat jadwal...</p>
+                  </div>
+                ) : (
+                  Object.keys(schedules).map((day) => {
+                    const daySchedules = schedules[day];
+                    if (daySchedules.length === 0) return null;
+                    return (
+                      <div key={day}>
+                        <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 ml-1">{day}</h4>
+                        <div className="space-y-2">
+                          {daySchedules.map((schedule) => (
+                            <div key={schedule.id} className="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 flex items-center gap-3">
+                              <div className="w-12 h-12 rounded-full bg-blue-50 flex flex-col items-center justify-center shrink-0 text-blue-700">
+                                <span className="text-sm font-bold leading-none">{schedule.start_time.split(':')[0]}</span>
+                                <span className="text-[10px] font-medium leading-none">{schedule.start_time.split(':')[1]}</span>
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <h5 className="font-bold text-sm text-slate-800 truncate">{schedule.course_name}</h5>
+                                <div className="flex items-center gap-2 mt-1 text-xs text-slate-500">
+                                  <span className="flex items-center gap-1"><Clock size={12}/> {schedule.start_time} - {schedule.end_time}</span>
+                                  <span className="flex items-center gap-1"><MapPin size={12}/> {schedule.room_name}</span>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )
+                  })
+                )}
+                
+                {Object.values(schedules).every(day => day.length === 0) && (
+                  <div className="text-center py-10">
+                    <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                      <Calendar size={24} className="text-slate-400" />
+                    </div>
+                    <h4 className="font-bold text-slate-700">Tidak ada jadwal</h4>
+                    <p className="text-sm text-slate-500 mt-1">Anda belum memiliki jadwal kelas.</p>
+                  </div>
+                )}
               </div>
             </motion.div>
           </motion.div>

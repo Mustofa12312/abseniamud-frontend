@@ -60,8 +60,8 @@ export default function StaffMaster() {
   }
 
   const handleDownloadTemplate = () => {
-    const headers = "Nama Lengkap,Email,NIP,No. Telepon,Unit Kerja,Alamat,Juga Dosen?,NIDN\n"
-    const dummyData = "Budi Santoso,budi@iaimu.ac.id,198001012005011002,08123456789,BAK,Jl. Raya No. 1,Tidak,\n"
+    const headers = "Nama Lengkap;Email;NIP;No. Telepon;Unit Kerja;Alamat;Juga Dosen?;NIDN\n"
+    const dummyData = "Budi Santoso;budi@iaimu.ac.id;198001012005011002;08123456789;BAK;Jl. Raya No. 1;Tidak;\n"
     const csvContent = headers + dummyData
 
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })

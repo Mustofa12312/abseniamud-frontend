@@ -68,8 +68,8 @@ export default function LecturerMaster() {
   }
 
   const handleDownloadTemplate = () => {
-    const headers = "Nama Lengkap,Email,NIDN,NIP,Telepon,Alamat\n"
-    const dummyData = "Budi Santoso,budi@iaimu.ac.id,123456789,198001012005011002,08123456789,Jl. Raya Pamekasan No. 1\n"
+    const headers = "Nama Lengkap;Email;NIDN;NIP;Telepon;Alamat\n"
+    const dummyData = "Budi Santoso;budi@iaimu.ac.id;123456789;198001012005011002;08123456789;Jl. Raya Pamekasan No. 1\n"
     const csvContent = headers + dummyData
 
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
