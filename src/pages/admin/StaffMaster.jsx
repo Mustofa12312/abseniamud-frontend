@@ -3,9 +3,10 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../..
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../../components/ui/Table"
 import { Button } from "../../components/ui/Button"
 import { Input } from "../../components/ui/Input"
-import { Search, Plus, Edit2, Trash2, UserCheck, BookOpen } from "lucide-react"
+import { Search, Plus, Edit2, Trash2, UserCheck, BookOpen, Download, Upload, FileSpreadsheet } from "lucide-react"
 import { adminService } from "../../services/admin"
 import { useToast } from "../../contexts/ToastContext"
+import { useRef } from "react"
 
 const emptyForm = {
   name: '', email: '', nip: '', phone: '', department: '', address: '',
@@ -36,6 +37,70 @@ export default function StaffMaster() {
   }
 
   useEffect(() => { fetchStaff() }, [])
+
+  const fileInputRef = useRef(null)
+
+  const handleExportCSV = async () => {
+    try {
+      setSubmitting(true)
+      const blob = await adminService.exportStaff()
+      const url = window.URL.createObjectURL(blob)
+      const link = document.createElement("a")
+      link.href = url
+      link.setAttribute("download", `Data_Tendik_${new Date().getTime()}.csv`)
+      document.body.appendChild(link)
+      link.click()
+      link.parentNode.removeChild(link)
+      window.URL.revokeObjectURL(url)
+    } catch (err) {
+      error("Gagal mengekspor data tendik.")
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  const handleDownloadTemplate = () => {
+    const headers = "Nama Lengkap,Email,NIP,No. Telepon,Unit Kerja,Alamat,Juga Dosen?,NIDN\n"
+    const dummyData = "Budi Santoso,budi@iaimu.ac.id,198001012005011002,08123456789,BAK,Jl. Raya No. 1,Tidak,\n"
+    const csvContent = headers + dummyData
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+    const url = window.URL.createObjectURL(blob)
+    const link = document.createElement("a")
+    link.href = url
+    link.setAttribute("download", "Template_Import_Tendik.csv")
+    document.body.appendChild(link)
+    link.click()
+    link.parentNode.removeChild(link)
+    window.URL.revokeObjectURL(url)
+  }
+
+  const handleFileChange = async (e) => {
+    const file = e.target.files[0]
+    if (!file) return
+
+    if (!file.name.endsWith('.csv')) {
+      error("Harap unggah file berformat CSV.")
+      return
+    }
+
+    try {
+      setSubmitting(true)
+      const formData = new FormData()
+      formData.append('file', file)
+      
+      const res = await adminService.importStaff(formData)
+      if (res.success) {
+        success(res.message)
+        fetchStaff()
+      }
+    } catch (err) {
+      error(err.response?.data?.message || "Gagal mengimpor data tendik.")
+    } finally {
+      setSubmitting(false)
+      if (fileInputRef.current) fileInputRef.current.value = ""
+    }
+  }
 
   const handleOpenCreate = () => {
     setEditingStaff(null)
@@ -135,9 +200,27 @@ export default function StaffMaster() {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
-          <Button onClick={handleOpenCreate} className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 shadow-sm">
-            <Plus size={16} /> Tambah Tendik
-          </Button>
+          <div className="flex flex-wrap sm:flex-nowrap gap-2 w-full sm:w-auto justify-end">
+            <input 
+              type="file" 
+              accept=".csv" 
+              className="hidden" 
+              ref={fileInputRef} 
+              onChange={handleFileChange} 
+            />
+            <Button onClick={handleDownloadTemplate} variant="outline" className="flex-1 sm:flex-none flex items-center justify-center gap-2 border-brand-200 text-brand-700 hover:bg-brand-50" disabled={submitting}>
+              <FileSpreadsheet size={16} /> Template
+            </Button>
+            <Button onClick={() => fileInputRef.current?.click()} variant="outline" className="flex-1 sm:flex-none flex items-center justify-center gap-2 border-emerald-200 text-emerald-700 hover:bg-emerald-50" disabled={submitting}>
+              <Upload size={16} /> Import
+            </Button>
+            <Button onClick={handleExportCSV} variant="outline" className="flex-1 sm:flex-none flex items-center justify-center gap-2 border-blue-200 text-blue-700 hover:bg-blue-50" disabled={submitting}>
+              <Download size={16} /> Export
+            </Button>
+            <Button onClick={handleOpenCreate} className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 shadow-sm">
+              <Plus size={16} /> Tambah Tendik
+            </Button>
+          </div>
         </div>
       </div>
 

@@ -111,6 +111,20 @@ export const adminService = {
     return response.data;
   },
 
+  exportStaff: async () => {
+    const response = await api.get('/admin/staff/export', { responseType: 'blob' });
+    return response.data;
+  },
+
+  importStaff: async (formData) => {
+    const response = await api.post('/admin/staff/import', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    });
+    return response.data;
+  },
+
   createStaff: async (data) => {
     const response = await api.post('/admin/staff', data);
     return response.data;
