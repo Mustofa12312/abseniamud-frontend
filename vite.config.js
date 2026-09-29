@@ -22,14 +22,14 @@ export default defineConfig({
         orientation: 'portrait',
         icons: [
           {
-            src: '/vite.svg', /* Since we dont have real icons yet, use vite */
+            src: '/iaimulogo.png',
             sizes: '192x192',
-            type: 'image/svg+xml'
+            type: 'image/png'
           },
           {
-            src: '/vite.svg',
+            src: '/iaimulogo.png',
             sizes: '512x512',
-            type: 'image/svg+xml'
+            type: 'image/png'
           }
         ]
       },
