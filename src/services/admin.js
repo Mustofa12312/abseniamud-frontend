@@ -105,5 +105,26 @@ export const adminService = {
     return response.data;
   },
 
+  // Staff (Tendik) CRUD
+  getStaff: async () => {
+    const response = await api.get('/admin/staff');
+    return response.data;
+  },
+
+  createStaff: async (data) => {
+    const response = await api.post('/admin/staff', data);
+    return response.data;
+  },
+
+  updateStaff: async (id, data) => {
+    const response = await api.put(`/admin/staff/${id}`, data);
+    return response.data;
+  },
+
+  deleteStaff: async (id) => {
+    const response = await api.delete(`/admin/staff/${id}`);
+    return response.data;
+  },
 
 };
+
