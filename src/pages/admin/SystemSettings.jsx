@@ -14,6 +14,7 @@ export default function SystemSettings() {
   const [formData, setFormData] = useState({
     app_name: 'IAIMU Attendance',
     default_checkin_time: '07:00',
+    staff_checkin_time: '07:30',
     late_tolerance_minutes: '15',
     default_radius_meters: '50'
   })
@@ -26,6 +27,7 @@ export default function SystemSettings() {
           setFormData({
             app_name: res.data.app_name || 'IAIMU Attendance',
             default_checkin_time: res.data.default_checkin_time || '07:00',
+            staff_checkin_time: res.data.staff_checkin_time || '07:30',
             late_tolerance_minutes: res.data.late_tolerance_minutes || '15',
             default_radius_meters: res.data.default_radius_meters || '50'
           })
@@ -112,7 +114,7 @@ export default function SystemSettings() {
           <CardContent className="p-6">
             <div className="grid gap-6 md:grid-cols-2 max-w-2xl">
               <div className="space-y-1.5">
-                <label className="text-sm font-medium text-slate-700">Jam Check-in Standar</label>
+                <label className="text-sm font-medium text-slate-700">Jam Check-in Standar <span className="text-xs text-slate-400">(Dosen)</span></label>
                 <div className="flex gap-2 items-center">
                   <Input 
                     type="time" 
@@ -123,6 +125,19 @@ export default function SystemSettings() {
                   <span className="text-sm text-slate-400">WIB</span>
                 </div>
                 <p className="text-xs text-slate-500 mt-1">Dosen yang tidak memiliki jadwal spesifik akan merujuk ke jam ini.</p>
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium text-slate-700">Jam Check-in Tendik <span className="text-xs text-slate-400">(Wajib Harian)</span></label>
+                <div className="flex gap-2 items-center">
+                  <Input 
+                    type="time" 
+                    name="staff_checkin_time" 
+                    value={formData.staff_checkin_time} 
+                    onChange={handleChange} 
+                  />
+                  <span className="text-sm text-slate-400">WIB</span>
+                </div>
+                <p className="text-xs text-slate-500 mt-1">Berlaku untuk Tendik dan jabatan struktural (Kaprodi, dll).</p>
               </div>
               <div className="space-y-1.5">
                 <label className="text-sm font-medium text-slate-700">Toleransi Keterlambatan</label>

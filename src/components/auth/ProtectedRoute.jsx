@@ -17,26 +17,30 @@ export default function ProtectedRoute({ allowedRoles }) {
     return <Navigate to="/login" replace />;
   }
 
-  // Check roles based on ID or name. For now, assuming user.role_id maps to 'super_admin' (1) or 'admin_akademik' (2).
-  // Ideally, user object from backend should return `role: { name: 'super_admin' }` or similar.
-  // For safety, let's assume if it's admin routes, role_id must be 1 or 2.
-  // Parse role_id to integer in case backend returns it as string
-  const roleId = parseInt(user.role_id, 10);
-  const isSuperAdmin = roleId === 1;
-  const isAdminAkademik = roleId === 2; // Assuming admin_akademik is 2 if exists
-  const isDosen = roleId === 2 || roleId === 3; // Dosen is 2 in seeder
+  // Use role name from backend (preferred) — fallback to role_id for legacy sessions
+  const roleName = user.role || null;
+  const roleId   = parseInt(user.role_id, 10);
 
-  const hasAccess = 
-    (allowedRoles.includes('super_admin') && isSuperAdmin) || 
+  // Determine role from name first, then fallback to ID-based detection
+  const isSuperAdmin   = roleName === 'super_admin'   || roleId === 1;
+  const isAdminAkademik= roleName === 'admin_akademik' || roleId === 2;
+  const isDosen        = roleName === 'dosen';
+  const isTendik       = roleName === 'tendik';
+
+  // Legacy: if no role name, treat role_id 3 as dosen
+  const isDosenOrTendik = isDosen || isTendik || (!roleName && roleId === 3);
+
+  const hasAccess =
+    (allowedRoles.includes('super_admin')    && isSuperAdmin)    ||
     (allowedRoles.includes('admin_akademik') && isAdminAkademik) ||
-    (allowedRoles.includes('dosen') && isDosen);
+    (allowedRoles.includes('dosen')          && isDosenOrTendik) ||
+    (allowedRoles.includes('tendik')         && isTendik);
 
   if (!hasAccess) {
-    // If user is just a lecturer but trying to access admin
-    if (isDosen) {
+    // Redirect dosen / tendik to their own portal
+    if (isDosenOrTendik) {
       return <Navigate to="/lecturer" replace />;
     }
-    // Otherwise go to login
     return <Navigate to="/login" replace />;
   }
 

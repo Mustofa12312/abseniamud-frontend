@@ -43,7 +43,7 @@ function App() {
           </Route>
           
           {/* Lecturer Routes */}
-          <Route element={<ProtectedRoute allowedRoles={['super_admin', 'admin_akademik', 'dosen']} />}>
+          <Route element={<ProtectedRoute allowedRoles={['super_admin', 'admin_akademik', 'dosen', 'tendik']} />}>
             <Route path="/lecturer" element={<LecturerLayout />}>
               <Route index element={<LecturerDashboard />} />
               <Route path="history" element={<LecturerHistory />} />
