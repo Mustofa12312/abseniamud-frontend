@@ -3,9 +3,14 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../..
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../../components/ui/Table"
 import { Button } from "../../components/ui/Button"
 import { Input } from "../../components/ui/Input"
-import { Search, Plus, Edit2, Trash2, UserCheck } from "lucide-react"
+import { Search, Plus, Edit2, Trash2, UserCheck, BookOpen } from "lucide-react"
 import { adminService } from "../../services/admin"
 import { useToast } from "../../contexts/ToastContext"
+
+const emptyForm = {
+  name: '', email: '', nip: '', phone: '', department: '', address: '',
+  is_also_lecturer: false, nidn: ''
+}
 
 export default function StaffMaster() {
   const { success, error } = useToast()
@@ -17,10 +22,7 @@ export default function StaffMaster() {
   const [editingStaff, setEditingStaff] = useState(null)
   const [deletingStaff, setDeletingStaff] = useState(null)
   const [submitting, setSubmitting] = useState(false)
-
-  const [formData, setFormData] = useState({
-    name: '', email: '', nip: '', phone: '', department: '', address: ''
-  })
+  const [formData, setFormData] = useState(emptyForm)
 
   const fetchStaff = async () => {
     try {
@@ -37,7 +39,7 @@ export default function StaffMaster() {
 
   const handleOpenCreate = () => {
     setEditingStaff(null)
-    setFormData({ name: '', email: '', nip: '', phone: '', department: '', address: '' })
+    setFormData(emptyForm)
     setIsModalOpen(true)
   }
 
@@ -50,14 +52,23 @@ export default function StaffMaster() {
       phone: s.phone || '',
       department: s.department || '',
       address: s.address || '',
+      is_also_lecturer: !!s.is_also_lecturer,
+      nidn: s.nidn || '',
     })
     setIsModalOpen(true)
   }
 
-  const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value })
+  const handleChange = (e) => {
+    const value = e.target.type === 'checkbox' ? e.target.checked : e.target.value
+    setFormData({ ...formData, [e.target.name]: value })
+  }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
+    if (formData.is_also_lecturer && !formData.nidn.trim()) {
+      error("NIDN wajib diisi jika tendik ini juga mengajar.")
+      return
+    }
     setSubmitting(true)
     try {
       if (editingStaff) {
@@ -93,7 +104,7 @@ export default function StaffMaster() {
         success("Tendik berhasil dihapus.")
       }
     } catch (err) {
-      error("Gagal menghapus.")
+      error(err.response?.data?.message || "Gagal menghapus.")
     } finally {
       setSubmitting(false)
     }
@@ -107,6 +118,7 @@ export default function StaffMaster() {
 
   return (
     <div className="space-y-6">
+      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h2 className="text-2xl font-bold tracking-tight text-slate-800">Master Tendik</h2>
@@ -134,10 +146,12 @@ export default function StaffMaster() {
         <UserCheck size={16} className="mt-0.5 shrink-0 text-emerald-600" />
         <p>
           Semua tendik secara otomatis menggunakan aturan <strong>kehadiran wajib harian</strong>.
-          Status kehadiran dihitung berdasarkan jam masuk yang dikonfigurasi di <strong>Pengaturan → Jam Masuk Tendik</strong>.
+          Tendik yang juga mengajar akan muncul di daftar dosen (untuk penugasan mata kuliah),
+          namun kehadiran tetap dihitung berdasarkan <strong>jam masuk tendik</strong>.
         </p>
       </div>
 
+      {/* Table */}
       <Card>
         <CardContent className="p-0">
           <Table>
@@ -147,29 +161,46 @@ export default function StaffMaster() {
                 <TableHead>Email</TableHead>
                 <TableHead>NIP</TableHead>
                 <TableHead>Unit Kerja</TableHead>
+                <TableHead className="text-center">Juga Mengajar?</TableHead>
                 <TableHead>No. Telepon</TableHead>
                 <TableHead className="text-right">Aksi</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {loading ? (
-                <TableRow><TableCell colSpan={6} className="text-center py-8 text-slate-500">Memuat data tendik...</TableCell></TableRow>
+                <TableRow><TableCell colSpan={7} className="text-center py-8 text-slate-500">Memuat data tendik...</TableCell></TableRow>
               ) : filtered.length === 0 ? (
-                <TableRow><TableCell colSpan={6} className="text-center py-8 text-slate-500">Tidak ada data tenaga kependidikan.</TableCell></TableRow>
+                <TableRow><TableCell colSpan={7} className="text-center py-8 text-slate-500">Tidak ada data tenaga kependidikan.</TableCell></TableRow>
               ) : (
                 filtered.map((s) => (
                   <TableRow key={s.id}>
                     <TableCell className="font-medium">
                       <div className="flex items-center gap-3">
-                        <div className="h-8 w-8 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold text-xs shrink-0">
+                        <div className={`h-8 w-8 rounded-full flex items-center justify-center font-bold text-xs shrink-0 ${s.is_also_lecturer ? 'bg-purple-100 text-purple-700' : 'bg-emerald-100 text-emerald-700'}`}>
                           {s.name.charAt(0).toUpperCase()}
                         </div>
-                        {s.name}
+                        <div>
+                          {s.name}
+                          {s.is_also_lecturer && (
+                            <span className="ml-2 inline-flex items-center gap-0.5 rounded-full bg-purple-100 text-purple-700 px-1.5 py-0.5 text-[10px] font-medium">
+                              <BookOpen size={9} /> Dosen
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </TableCell>
                     <TableCell className="text-slate-500">{s.email}</TableCell>
-                    <TableCell>{s.nip || <span className="text-slate-400 text-xs">Belum diatur</span>}</TableCell>
+                    <TableCell>{s.nip || <span className="text-slate-400 text-xs">—</span>}</TableCell>
                     <TableCell>{s.department || <span className="text-slate-400 text-xs">—</span>}</TableCell>
+                    <TableCell className="text-center">
+                      {s.is_also_lecturer ? (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-purple-100 text-purple-700 px-2.5 py-0.5 text-xs font-medium">
+                          <BookOpen size={10} /> Ya (NIDN: {s.nidn || '—'})
+                        </span>
+                      ) : (
+                        <span className="text-slate-400 text-xs">Tidak</span>
+                      )}
+                    </TableCell>
                     <TableCell>{s.phone || <span className="text-slate-400 text-xs">—</span>}</TableCell>
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-2">
@@ -188,13 +219,14 @@ export default function StaffMaster() {
       {/* Form Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
-          <Card className="w-full max-w-md shadow-xl">
+          <Card className="w-full max-w-lg shadow-xl max-h-[90vh] overflow-y-auto">
             <CardHeader>
               <CardTitle>{editingStaff ? 'Edit Tendik' : 'Tambah Tendik Baru'}</CardTitle>
               <CardDescription>Isi data tenaga kependidikan. Kehadiran wajib setiap hari kerja (Senin–Sabtu).</CardDescription>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-4">
+                {/* Data Utama */}
                 <div className="space-y-1.5">
                   <label className="text-sm font-medium text-slate-700">Nama Lengkap</label>
                   <Input type="text" name="name" value={formData.name} onChange={handleChange} required />
@@ -217,9 +249,52 @@ export default function StaffMaster() {
                   <label className="text-sm font-medium text-slate-700">Unit Kerja / Departemen</label>
                   <Input type="text" name="department" value={formData.department} onChange={handleChange} placeholder="Contoh: BAK, Perpustakaan, LP2M" />
                 </div>
-                <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-xs text-emerald-700">
+
+                {/* Dual Role Toggle */}
+                <div className="rounded-xl border border-slate-200 p-4 space-y-3">
+                  <label className="flex items-start gap-3 cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      name="is_also_lecturer"
+                      checked={formData.is_also_lecturer}
+                      onChange={handleChange}
+                      className="mt-0.5 h-4 w-4 rounded border-slate-300 text-purple-600 focus:ring-purple-500"
+                    />
+                    <div>
+                      <p className="text-sm font-medium text-slate-700 flex items-center gap-1.5">
+                        <BookOpen size={14} className="text-purple-500" />
+                        Tendik ini juga mengajar sebagai dosen
+                      </p>
+                      <p className="text-xs text-slate-500 mt-0.5">
+                        Jika dicentang, akun ini akan muncul di daftar dosen dan bisa ditugaskan ke mata kuliah.
+                        Kehadiran tetap dihitung dari jam masuk tendik.
+                      </p>
+                    </div>
+                  </label>
+
+                  {formData.is_also_lecturer && (
+                    <div className="space-y-1.5 pl-7">
+                      <label className="text-sm font-medium text-slate-700">
+                        NIDN <span className="text-red-500">*</span>
+                        <span className="text-slate-400 font-normal ml-1">(wajib jika mengajar)</span>
+                      </label>
+                      <Input
+                        type="text"
+                        name="nidn"
+                        value={formData.nidn}
+                        onChange={handleChange}
+                        placeholder="Nomor Induk Dosen Nasional"
+                        required={formData.is_also_lecturer}
+                      />
+                    </div>
+                  )}
+                </div>
+
+                {/* Info password */}
+                <div className="rounded-lg border border-slate-100 bg-slate-50 p-3 text-xs text-slate-500">
                   💡 Password default: <strong>password</strong>. Minta tendik untuk mengganti setelah login pertama.
                 </div>
+
                 <div className="flex gap-3 pt-2">
                   <Button type="button" variant="outline" className="w-full" onClick={() => setIsModalOpen(false)}>Batal</Button>
                   <Button type="submit" disabled={submitting} className="w-full bg-emerald-600 hover:bg-emerald-700">
@@ -238,10 +313,15 @@ export default function StaffMaster() {
           <Card className="w-full max-w-sm shadow-xl">
             <CardHeader><CardTitle>Konfirmasi Hapus</CardTitle></CardHeader>
             <CardContent>
-              <p className="text-sm text-slate-600 mb-6">
-                Apakah Anda yakin ingin menghapus <strong>{deletingStaff?.name}</strong>? Tindakan ini tidak dapat dibatalkan.
+              <p className="text-sm text-slate-600 mb-2">
+                Apakah Anda yakin ingin menghapus <strong>{deletingStaff?.name}</strong>?
               </p>
-              <div className="flex gap-3">
+              {deletingStaff?.is_also_lecturer && (
+                <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-700 mb-4">
+                  ⚠️ Tendik ini juga terdaftar sebagai dosen. Data dosen akan ikut dihapus jika belum memiliki mata kuliah yang ditugaskan.
+                </div>
+              )}
+              <div className="flex gap-3 mt-4">
                 <Button variant="outline" className="w-full" onClick={() => setIsDeleteModalOpen(false)}>Batal</Button>
                 <Button onClick={handleDelete} disabled={submitting} className="w-full bg-red-600 hover:bg-red-700 text-white">
                   {submitting ? 'Menghapus...' : 'Ya, Hapus'}
