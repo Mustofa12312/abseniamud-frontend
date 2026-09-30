@@ -68,7 +68,7 @@ export default function ReportMaster() {
       const url = window.URL.createObjectURL(blob)
       const link = document.createElement("a")
       link.href = url
-      link.setAttribute("download", `Laporan_Absensi_${selectedYear}_${selectedMonth}.csv`)
+      link.setAttribute("download", `Laporan_Absensi_${selectedYear}_${selectedMonth}.xlsx`)
       document.body.appendChild(link)
       link.click()
       link.parentNode.removeChild(link)
@@ -157,6 +157,7 @@ export default function ReportMaster() {
                 <TableHead>NIDN</TableHead>
                 <TableHead className="text-center">Total Hadir</TableHead>
                 <TableHead className="text-center">Total Terlambat</TableHead>
+                <TableHead className="text-center">Total Izin/Cuti</TableHead>
                 <TableHead className="text-center">Total Alpa</TableHead>
                 <TableHead className="text-right">Persentase</TableHead>
                 <TableHead className="text-right">Aksi</TableHead>
@@ -165,13 +166,13 @@ export default function ReportMaster() {
             <TableBody>
               {loading ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center text-slate-500 h-32 animate-pulse">
+                  <TableCell colSpan={7} className="text-center text-slate-500 h-32 animate-pulse">
                     Memuat data laporan...
                   </TableCell>
                 </TableRow>
               ) : reports.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="h-48">
+                  <TableCell colSpan={7} className="h-48">
                     <div className="flex items-center justify-center h-full">
                       <EmptyState 
                         title="Belum Ada Data" 
@@ -193,6 +194,11 @@ export default function ReportMaster() {
                     <TableCell className="text-center">
                       <span className="inline-flex items-center justify-center px-2 py-1 rounded-full bg-amber-50 text-amber-700 text-xs font-medium">
                         {report.terlambat}
+                      </span>
+                    </TableCell>
+                    <TableCell className="text-center">
+                      <span className="inline-flex items-center justify-center px-2 py-1 rounded-full bg-blue-50 text-blue-700 text-xs font-medium">
+                        {report.izin || 0}
                       </span>
                     </TableCell>
                     <TableCell className="text-center">
