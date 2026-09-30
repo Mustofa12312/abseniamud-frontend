@@ -181,6 +181,7 @@ export default function LecturerDashboard() {
     NOT_CHECKED_IN: { text: "Belum Absen",   color: "text-slate-500",   bg: "bg-slate-100"  },
     CHECKED_IN:     { text: "Sudah Check-in", color: "text-teal-700",    bg: "bg-teal-50"    },
     CHECKED_OUT:    { text: "Selesai Hari Ini", color: "text-brand-700", bg: "bg-brand-50"   },
+    HOLIDAY:        { text: "Hari Libur", color: "text-slate-500", bg: "bg-slate-100" },
   }[status] ?? { text: status, color: "text-slate-500", bg: "bg-slate-100" }
 
   return (
