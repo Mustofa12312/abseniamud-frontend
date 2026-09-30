@@ -4,12 +4,15 @@ import { Button } from "../../components/ui/Button"
 import { Input } from "../../components/ui/Input"
 import { Settings, Save, Clock, Map, Building2 } from "lucide-react"
 import { adminService } from "../../services/admin"
+import { authService } from "../../services/auth"
 import { useToast } from "../../contexts/ToastContext"
+import { Lock } from "lucide-react"
 
 export default function SystemSettings() {
   const { success, error } = useToast()
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [savingPassword, setSavingPassword] = useState(false)
   
   const [formData, setFormData] = useState({
     app_name: 'IAIMU Attendance',
@@ -17,6 +20,12 @@ export default function SystemSettings() {
     staff_checkin_time: '07:30',
     late_tolerance_minutes: '15',
     default_radius_meters: '50'
+  })
+
+  const [passwordData, setPasswordData] = useState({
+    current_password: '',
+    new_password: '',
+    new_password_confirmation: ''
   })
 
   useEffect(() => {
@@ -45,6 +54,10 @@ export default function SystemSettings() {
     setFormData({ ...formData, [e.target.name]: e.target.value })
   }
 
+  const handlePasswordChange = (e) => {
+    setPasswordData({ ...passwordData, [e.target.name]: e.target.value })
+  }
+
   const handleSubmit = async (e) => {
     e.preventDefault()
     setSaving(true)
@@ -57,6 +70,29 @@ export default function SystemSettings() {
       error(err.response?.data?.message || 'Gagal menyimpan pengaturan.')
     } finally {
       setSaving(false)
+    }
+  }
+
+  const handleSubmitPassword = async (e) => {
+    e.preventDefault()
+    if (passwordData.new_password !== passwordData.new_password_confirmation) {
+      error("Password baru dan konfirmasi tidak cocok.")
+      return
+    }
+    setSavingPassword(true)
+    try {
+      const res = await authService.updateProfile({
+        current_password: passwordData.current_password,
+        new_password: passwordData.new_password
+      })
+      if (res.success) {
+        success("Password berhasil diubah.")
+        setPasswordData({ current_password: '', new_password: '', new_password_confirmation: '' })
+      }
+    } catch (err) {
+      error(err.response?.data?.message || 'Gagal mengubah password.')
+    } finally {
+      setSavingPassword(false)
     }
   }
 
@@ -194,6 +230,65 @@ export default function SystemSettings() {
           <Button type="submit" disabled={saving} className="px-8 flex items-center gap-2">
             <Save size={16} />
             {saving ? 'Menyimpan...' : 'Simpan Pengaturan'}
+          </Button>
+        </div>
+      </form>
+
+      <form onSubmit={handleSubmitPassword} className="space-y-6 mt-12">
+        {/* Keamanan Akun */}
+        <Card className="border-none shadow-sm overflow-hidden">
+          <div className="bg-rose-50/50 p-4 border-b border-rose-100 flex items-center gap-3">
+            <div className="p-2 bg-rose-100 text-rose-600 rounded-lg">
+              <Lock size={20} />
+            </div>
+            <div>
+              <h3 className="font-semibold text-rose-900">Ubah Password Akun</h3>
+              <p className="text-xs text-rose-600">Perbarui kata sandi untuk akun administrator ini</p>
+            </div>
+          </div>
+          <CardContent className="p-6">
+            <div className="grid gap-4 max-w-xl">
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium text-slate-700">Password Saat Ini <span className="text-red-500">*</span></label>
+                <Input 
+                  type="password"
+                  name="current_password" 
+                  value={passwordData.current_password} 
+                  onChange={handlePasswordChange} 
+                  placeholder="Masukkan password Anda saat ini"
+                  required
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium text-slate-700">Password Baru <span className="text-red-500">*</span></label>
+                <Input 
+                  type="password"
+                  name="new_password" 
+                  value={passwordData.new_password} 
+                  onChange={handlePasswordChange} 
+                  placeholder="Minimal 6 karakter"
+                  required
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium text-slate-700">Konfirmasi Password Baru <span className="text-red-500">*</span></label>
+                <Input 
+                  type="password"
+                  name="new_password_confirmation" 
+                  value={passwordData.new_password_confirmation} 
+                  onChange={handlePasswordChange} 
+                  placeholder="Ketik ulang password baru"
+                  required
+                />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <div className="flex justify-end border-t border-slate-200 pt-6">
+          <Button type="submit" disabled={savingPassword || !passwordData.current_password} className="px-8 flex items-center gap-2 bg-rose-600 hover:bg-rose-700 text-white">
+            <Lock size={16} />
+            {savingPassword ? 'Menyimpan...' : 'Ubah Password'}
           </Button>
         </div>
       </form>
