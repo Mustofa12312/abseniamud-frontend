@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react"
-import { MapPin, Clock, Calendar, CheckCircle2, XCircle, LogIn, LogOut, AlertCircle, Loader2, PartyPopper, CheckCircle, FileX, Info, Send, Megaphone, ChevronRight, BookOpen } from "lucide-react"
+import { MapPin, Clock, Calendar, CheckCircle2, XCircle, LogIn, LogOut, AlertCircle, Loader2, PartyPopper, CheckCircle, FileX, Info, Send, Megaphone, ChevronRight, BookOpen, Lock, X, Save } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import { Button } from "../../components/ui/Button"
 import { Input } from "../../components/ui/Input"
@@ -39,6 +39,43 @@ export default function LecturerDashboard() {
   // Schedules State
   const [schedules, setSchedules] = useState({})
   const [showScheduleModal, setShowScheduleModal] = useState(false)
+  const [showPasswordModal, setShowPasswordModal] = useState(false)
+  const [passwordData, setPasswordData] = useState({
+    current_password: '',
+    new_password: '',
+    new_password_confirmation: ''
+  })
+  const [submittingPassword, setSubmittingPassword] = useState(false)
+
+  const handlePasswordChange = (e) => {
+    setPasswordData({ ...passwordData, [e.target.name]: e.target.value })
+  }
+
+  const handleSubmitPassword = async (e) => {
+    e.preventDefault()
+    if (passwordData.new_password !== passwordData.new_password_confirmation) {
+      error("Konfirmasi password baru tidak cocok.")
+      return
+    }
+    setSubmittingPassword(true)
+    try {
+      // Import authService from ../../services/auth inside or add to imports above
+      const { authService } = await import('../../services/auth');
+      const res = await authService.updateProfile({
+        current_password: passwordData.current_password,
+        new_password: passwordData.new_password
+      })
+      if (res.success) {
+        success("Password berhasil diubah.")
+        setShowPasswordModal(false)
+        setPasswordData({ current_password: '', new_password: '', new_password_confirmation: '' })
+      }
+    } catch (err) {
+      error(err.response?.data?.message || 'Gagal mengubah password.')
+    } finally {
+      setSubmittingPassword(false)
+    }
+  }
 
   // Real-time clock
   useEffect(() => {
@@ -426,6 +463,22 @@ export default function LecturerDashboard() {
               </div>
             </div>
           </button>
+          
+          <button 
+            onClick={() => setShowPasswordModal(true)}
+            className="w-full flex items-center justify-between p-4 hover:bg-slate-50 active:bg-slate-100 transition-colors"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-rose-50 flex items-center justify-center">
+                <Lock size={18} className="text-rose-600" />
+              </div>
+              <div className="text-left">
+                <p className="text-sm font-semibold text-slate-800">Ganti Password</p>
+                <p className="text-xs text-slate-500">Perbarui kata sandi keamanan Anda</p>
+              </div>
+            </div>
+            <ChevronRight size={16} className="text-slate-300" />
+          </button>
         </div>
       </div>
 
@@ -677,6 +730,83 @@ export default function LecturerDashboard() {
                     <p className="text-sm text-slate-500 mt-1">Anda belum memiliki jadwal kelas.</p>
                   </div>
                 )}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+        {/* Password Modal */}
+        {showPasswordModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm"
+          >
+            <motion.div
+              initial={{ y: "100%" }}
+              animate={{ y: 0 }}
+              exit={{ y: "100%" }}
+              transition={{ type: "spring", damping: 25, stiffness: 300 }}
+              className="bg-white dark:bg-slate-900 rounded-t-3xl sm:rounded-3xl shadow-2xl w-full max-w-md overflow-hidden max-h-[90vh] flex flex-col"
+            >
+              <div className="flex items-center justify-between p-6 border-b border-slate-100">
+                <div>
+                  <h3 className="text-lg font-bold text-slate-800">Ganti Password</h3>
+                  <p className="text-xs text-slate-500">Perbarui kata sandi akun Anda</p>
+                </div>
+                <Button variant="ghost" size="icon" onClick={() => setShowPasswordModal(false)} className="rounded-full bg-slate-100 hover:bg-slate-200">
+                  <X size={18} />
+                </Button>
+              </div>
+              
+              <div className="p-6 overflow-y-auto">
+                <form id="password-form" onSubmit={handleSubmitPassword} className="space-y-4">
+                  <div className="space-y-1.5">
+                    <label className="text-sm font-medium text-slate-700">Password Saat Ini</label>
+                    <Input 
+                      type="password"
+                      name="current_password"
+                      value={passwordData.current_password}
+                      onChange={handlePasswordChange}
+                      required
+                      placeholder="Masukkan password Anda saat ini"
+                    />
+                  </div>
+                  
+                  <div className="space-y-1.5">
+                    <label className="text-sm font-medium text-slate-700">Password Baru</label>
+                    <Input 
+                      type="password"
+                      name="new_password"
+                      value={passwordData.new_password}
+                      onChange={handlePasswordChange}
+                      required
+                      placeholder="Minimal 6 karakter"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-sm font-medium text-slate-700">Konfirmasi Password Baru</label>
+                    <Input 
+                      type="password"
+                      name="new_password_confirmation"
+                      value={passwordData.new_password_confirmation}
+                      onChange={handlePasswordChange}
+                      required
+                      placeholder="Ketik ulang password baru"
+                    />
+                  </div>
+                </form>
+              </div>
+
+              <div className="p-6 pt-2 border-t border-slate-100 bg-slate-50 mt-auto">
+                <Button type="submit" form="password-form" className="w-full h-12 rounded-xl text-md font-semibold bg-brand-600 hover:bg-brand-700" disabled={submittingPassword}>
+                  {submittingPassword ? (
+                    <><Loader2 size={18} className="animate-spin mr-2" /> Menyimpan...</>
+                  ) : (
+                    <><Save size={18} className="mr-2" /> Simpan Password Baru</>
+                  )}
+                </Button>
               </div>
             </motion.div>
           </motion.div>
