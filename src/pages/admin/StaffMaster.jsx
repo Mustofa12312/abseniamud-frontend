@@ -59,46 +59,43 @@ export default function StaffMaster() {
     }
   }
 
-  const handleDownloadTemplate = () => {
-    const headers = "Nama Lengkap;Email;NIP;No. Telepon;Unit Kerja;Alamat;Juga Dosen?;NIDN\n"
-    const dummyData = "Budi Santoso;budi@iaimu.ac.id;198001012005011002;08123456789;BAK;Jl. Raya No. 1;Tidak;\n"
-    const csvContent = headers + dummyData
+  const [isFromLecturerModalOpen, setIsFromLecturerModalOpen] = useState(false)
+  const [availableLecturers, setAvailableLecturers] = useState([])
+  const [selectedLecturerId, setSelectedLecturerId] = useState('')
+  const [fromLecturerDept, setFromLecturerDept] = useState('')
 
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
-    const url = window.URL.createObjectURL(blob)
-    const link = document.createElement("a")
-    link.href = url
-    link.setAttribute("download", "Template_Import_Tendik.csv")
-    document.body.appendChild(link)
-    link.click()
-    link.parentNode.removeChild(link)
-    window.URL.revokeObjectURL(url)
+  const fetchAvailableLecturers = async () => {
+    try {
+      const res = await adminService.getAvailableLecturers()
+      if (res.success) setAvailableLecturers(res.data)
+    } catch (err) {
+      error("Gagal memuat daftar dosen")
+    }
   }
 
-  const handleFileChange = async (e) => {
-    const file = e.target.files[0]
-    if (!file) return
-
-    if (!file.name.endsWith('.csv')) {
-      error("Harap unggah file berformat CSV.")
+  const handleCreateFromLecturer = async (e) => {
+    e.preventDefault()
+    if (!selectedLecturerId) {
+      error("Pilih dosen terlebih dahulu")
       return
     }
-
+    setSubmitting(true)
     try {
-      setSubmitting(true)
-      const formData = new FormData()
-      formData.append('file', file)
-      
-      const res = await adminService.importStaff(formData)
+      const res = await adminService.createStaffFromLecturer({
+        user_id: selectedLecturerId,
+        department: fromLecturerDept
+      })
       if (res.success) {
         success(res.message)
+        setIsFromLecturerModalOpen(false)
+        setSelectedLecturerId('')
+        setFromLecturerDept('')
         fetchStaff()
       }
     } catch (err) {
-      error(err.response?.data?.message || "Gagal mengimpor data tendik.")
+      error(err.response?.data?.message || "Gagal menjadikan dosen sebagai tendik")
     } finally {
       setSubmitting(false)
-      if (fileInputRef.current) fileInputRef.current.value = ""
     }
   }
 
@@ -201,21 +198,11 @@ export default function StaffMaster() {
             onChange={(e) => setSearchQuery(e.target.value)}
           />
           <div className="flex flex-wrap sm:flex-nowrap gap-2 w-full sm:w-auto justify-end">
-            <input 
-              type="file" 
-              accept=".csv" 
-              className="hidden" 
-              ref={fileInputRef} 
-              onChange={handleFileChange} 
-            />
-            <Button onClick={handleDownloadTemplate} variant="outline" className="flex-1 sm:flex-none flex items-center justify-center gap-2 border-brand-200 text-brand-700 hover:bg-brand-50" disabled={submitting}>
-              <FileSpreadsheet size={16} /> Template
-            </Button>
-            <Button onClick={() => fileInputRef.current?.click()} variant="outline" className="flex-1 sm:flex-none flex items-center justify-center gap-2 border-emerald-200 text-emerald-700 hover:bg-emerald-50" disabled={submitting}>
-              <Upload size={16} /> Import
-            </Button>
             <Button onClick={handleExportCSV} variant="outline" className="flex-1 sm:flex-none flex items-center justify-center gap-2 border-blue-200 text-blue-700 hover:bg-blue-50" disabled={submitting}>
               <Download size={16} /> Export
+            </Button>
+            <Button onClick={() => { setAvailableLecturers([]); setIsFromLecturerModalOpen(true); fetchAvailableLecturers(); }} variant="outline" className="flex-1 sm:flex-none flex items-center justify-center gap-2 border-brand-200 text-brand-700 hover:bg-brand-50" disabled={submitting}>
+              <UserCheck size={16} /> Ambil dari Dosen
             </Button>
             <Button onClick={handleOpenCreate} className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 shadow-sm">
               <Plus size={16} /> Tambah Tendik
@@ -411,6 +398,58 @@ export default function StaffMaster() {
                 </Button>
               </div>
             </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Ambil dari Dosen Modal */}
+      {isFromLecturerModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
+          <Card className="w-full max-w-md shadow-xl border-0 overflow-hidden">
+            <CardHeader className="bg-slate-50 border-b border-slate-100 pb-4">
+              <CardTitle className="text-lg">Ambil dari Dosen</CardTitle>
+              <CardDescription>
+                Pilih Dosen yang ada untuk dijadikan Tenaga Kependidikan.
+              </CardDescription>
+            </CardHeader>
+            <form onSubmit={handleCreateFromLecturer}>
+              <CardContent className="pt-6 space-y-4 max-h-[70vh] overflow-y-auto">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-slate-700">Pilih Dosen <span className="text-red-500">*</span></label>
+                  <select
+                    className="w-full p-2.5 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-brand-500"
+                    value={selectedLecturerId}
+                    onChange={(e) => setSelectedLecturerId(e.target.value)}
+                    required
+                  >
+                    <option value="">-- Pilih Dosen --</option>
+                    {availableLecturers.map((lecturer) => (
+                      <option key={lecturer.id} value={lecturer.id}>
+                        {lecturer.name} {lecturer.lecturer?.nidn ? `(NIDN: ${lecturer.lecturer.nidn})` : ''}
+                      </option>
+                    ))}
+                  </select>
+                  {availableLecturers.length === 0 && (
+                    <p className="text-xs text-amber-600">Sedang memuat data atau tidak ada dosen yang tersedia.</p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-slate-700">Unit Kerja</label>
+                  <Input 
+                    placeholder="Contoh: BAK, BAAK..."
+                    value={fromLecturerDept}
+                    onChange={(e) => setFromLecturerDept(e.target.value)}
+                  />
+                </div>
+              </CardContent>
+              <div className="p-4 bg-slate-50 border-t border-slate-100 flex justify-end gap-3">
+                <Button type="button" variant="outline" onClick={() => setIsFromLecturerModalOpen(false)}>Batal</Button>
+                <Button type="submit" disabled={submitting || !selectedLecturerId} className="bg-brand-600 hover:bg-brand-700 text-white">
+                  {submitting ? 'Menyimpan...' : 'Jadikan Tendik'}
+                </Button>
+              </div>
+            </form>
           </Card>
         </div>
       )}

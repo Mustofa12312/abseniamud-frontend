@@ -116,12 +116,13 @@ export const adminService = {
     return response.data;
   },
 
-  importStaff: async (formData) => {
-    const response = await api.post('/admin/staff/import', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data'
-      }
-    });
+  getAvailableLecturers: async () => {
+    const response = await api.get('/admin/staff/available-lecturers');
+    return response.data;
+  },
+
+  createStaffFromLecturer: async (data) => {
+    const response = await api.post('/admin/staff/from-lecturer', data);
     return response.data;
   },
 
