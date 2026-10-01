@@ -10,6 +10,7 @@ export default function AdminLeaves() {
   const [loading, setLoading] = useState(true)
   const [statusFilter, setStatusFilter] = useState('ALL')
   const { success, error } = useToast()
+  const [confirmAction, setConfirmAction] = useState(null) // {id, status}
 
   const fetchLeaves = async () => {
     try {
@@ -30,14 +31,13 @@ export default function AdminLeaves() {
   }, [])
 
   const handleUpdateStatus = async (id, status) => {
-    if (window.confirm(`Yakin ingin mengubah status menjadi ${status}?`)) {
-      try {
-        await api.put(`/admin/leaves/${id}`, { status })
-        success(`Status berhasil diubah menjadi ${status}`)
-        fetchLeaves()
-      } catch (err) {
-        error("Gagal mengubah status")
-      }
+    try {
+      await api.put(`/admin/leaves/${id}`, { status })
+      success(`Status berhasil diubah menjadi ${status === 'APPROVED' ? 'Disetujui' : 'Ditolak'}`)
+      setConfirmAction(null)
+      fetchLeaves()
+    } catch (err) {
+      error("Gagal mengubah status")
     }
   }
 
@@ -112,10 +112,10 @@ export default function AdminLeaves() {
                     <td className="px-6 py-4 text-right">
                       {item.status === 'PENDING' && (
                         <div className="flex justify-end gap-2">
-                          <button onClick={() => handleUpdateStatus(item.id, 'APPROVED')} className="flex items-center gap-1 px-3 py-1.5 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 rounded-lg transition-colors text-xs font-semibold">
+                          <button onClick={() => setConfirmAction({ id: item.id, status: 'APPROVED' })} className="flex items-center gap-1 px-3 py-1.5 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 rounded-lg transition-colors text-xs font-semibold">
                             <CheckCircle size={14} /> Terima
                           </button>
-                          <button onClick={() => handleUpdateStatus(item.id, 'REJECTED')} className="flex items-center gap-1 px-3 py-1.5 bg-red-50 text-red-600 hover:bg-red-100 rounded-lg transition-colors text-xs font-semibold">
+                          <button onClick={() => setConfirmAction({ id: item.id, status: 'REJECTED' })} className="flex items-center gap-1 px-3 py-1.5 bg-red-50 text-red-600 hover:bg-red-100 rounded-lg transition-colors text-xs font-semibold">
                             <XCircle size={14} /> Tolak
                           </button>
                         </div>
@@ -128,6 +128,34 @@ export default function AdminLeaves() {
           </table>
         </div>
       </Card>
+
+      {/* Confirmation Modal */}
+      {confirmAction && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
+          <Card className="w-full max-w-sm shadow-xl">
+            <CardContent className="p-6 text-center">
+              <div className={`w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4 ${confirmAction.status === 'APPROVED' ? 'bg-emerald-100' : 'bg-red-100'}`}>
+                {confirmAction.status === 'APPROVED' ? <CheckCircle size={22} className="text-emerald-600" /> : <XCircle size={22} className="text-red-600" />}
+              </div>
+              <h3 className="font-semibold text-slate-800 mb-2">
+                {confirmAction.status === 'APPROVED' ? 'Setujui Permohonan?' : 'Tolak Permohonan?'}
+              </h3>
+              <p className="text-sm text-slate-500 mb-6">Tindakan ini akan memperbarui status pengajuan izin/cuti.</p>
+              <div className="flex gap-3">
+                <button onClick={() => setConfirmAction(null)} className="flex-1 px-4 py-2 border border-slate-300 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors">
+                  Batal
+                </button>
+                <button
+                  onClick={() => handleUpdateStatus(confirmAction.id, confirmAction.status)}
+                  className={`flex-1 px-4 py-2 text-white rounded-lg text-sm font-medium transition-colors ${confirmAction.status === 'APPROVED' ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-red-600 hover:bg-red-700'}`}
+                >
+                  {confirmAction.status === 'APPROVED' ? 'Ya, Setujui' : 'Ya, Tolak'}
+                </button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </div>
   )
 }

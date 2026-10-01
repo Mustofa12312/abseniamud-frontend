@@ -14,6 +14,8 @@ export default function LecturerMaster() {
   const [lecturers, setLecturers] = useState([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState("")
+  const [currentPage, setCurrentPage] = useState(1)
+  const ITEMS_PER_PAGE = 10
 
   // Modal state
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -195,6 +197,9 @@ export default function LecturerMaster() {
     row.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
     (row.nidn && row.nidn.includes(searchQuery))
   )
+  
+  const totalPages = Math.ceil(filteredData.length / ITEMS_PER_PAGE)
+  const pagedData = filteredData.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE)
 
   return (
     <div className="space-y-6">
@@ -257,7 +262,7 @@ export default function LecturerMaster() {
                   <TableCell colSpan={5} className="text-center py-8 text-slate-500">Tidak ada data dosen.</TableCell>
                 </TableRow>
               ) : (
-                filteredData.map((lec) => (
+                pagedData.map((lec) => (
                   <TableRow key={lec.id}>
                     <TableCell className="font-medium">
                       <div className="flex items-center gap-3">
@@ -292,6 +297,38 @@ export default function LecturerMaster() {
           </Table>
         </CardContent>
       </Card>
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between text-sm">
+          <span className="text-slate-500">
+            Menampilkan {(currentPage - 1) * ITEMS_PER_PAGE + 1}–{Math.min(currentPage * ITEMS_PER_PAGE, filteredData.length)} dari {filteredData.length} data
+          </span>
+          <div className="flex gap-1">
+            <button
+              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+              className="px-3 py-1.5 border border-slate-300 rounded-md text-xs font-medium disabled:opacity-40 hover:bg-slate-50 transition-colors"
+            >← Sebelumnya</button>
+            {Array.from({ length: totalPages }, (_, i) => i + 1).filter(p => p === 1 || p === totalPages || Math.abs(p - currentPage) <= 1).map((p, i, arr) => (
+              <span key={p}>
+                {i > 0 && arr[i - 1] !== p - 1 && <span className="px-1 text-slate-400">…</span>}
+                <button
+                  onClick={() => setCurrentPage(p)}
+                  className={`w-8 h-7 rounded-md text-xs font-medium transition-colors ${
+                    p === currentPage ? 'bg-brand-600 text-white' : 'border border-slate-300 hover:bg-slate-50'
+                  }`}
+                >{p}</button>
+              </span>
+            ))}
+            <button
+              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+              disabled={currentPage === totalPages}
+              className="px-3 py-1.5 border border-slate-300 rounded-md text-xs font-medium disabled:opacity-40 hover:bg-slate-50 transition-colors"
+            >Berikutnya →</button>
+          </div>
+        </div>
+      )}
       
       {/* Modal Form */}
       {isModalOpen && (

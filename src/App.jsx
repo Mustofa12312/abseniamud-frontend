@@ -25,6 +25,7 @@ import ScheduleMaster from "./pages/admin/ScheduleMaster"
 import SystemSettings from "./pages/admin/SystemSettings"
 import LecturerCorrection from "./pages/dashboard/LecturerCorrection"
 import LecturerLeave from "./pages/dashboard/LecturerLeave"
+import LecturerSchedule from "./pages/dashboard/LecturerSchedule"
 import CorrectionMaster from "./pages/admin/CorrectionMaster"
 import AuditLogMaster from "./pages/admin/AuditLogMaster"
 import UserMaster from "./pages/admin/UserMaster"
@@ -53,6 +54,7 @@ function App() {
               <Route path="profile" element={<LecturerProfile />} />
               <Route path="corrections" element={<LecturerCorrection />} />
               <Route path="leaves" element={<LecturerLeave />} />
+              <Route path="schedules" element={<LecturerSchedule />} />
             </Route>
           </Route>
 
