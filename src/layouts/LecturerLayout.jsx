@@ -1,6 +1,6 @@
 import { Outlet } from "react-router-dom"
 import { motion } from "framer-motion"
-import { Home, Clock, LogOut, User, FileText, HeartHandshake } from "lucide-react"
+import { Home, Clock, LogOut, User, FileText, HeartHandshake, CalendarDays } from "lucide-react"
 import { useNavigate, useLocation } from "react-router-dom"
 import { cn } from "../utils/utils"
 import ThemeToggle from "../components/ui/ThemeToggle"
@@ -12,6 +12,7 @@ export default function LecturerLayout() {
   const navItems = [
     { label: "Beranda", icon: Home, path: "/lecturer", active: location.pathname === "/lecturer" },
     { label: "Riwayat", icon: Clock, path: "/lecturer/history", active: location.pathname.includes("history") },
+    { label: "Jadwal", icon: CalendarDays, path: "/lecturer/schedules", active: location.pathname.includes("schedules") },
     { label: "Izin", icon: HeartHandshake, path: "/lecturer/leaves", active: location.pathname.includes("leaves") },
     { label: "Koreksi", icon: FileText, path: "/lecturer/corrections", active: location.pathname.includes("corrections") },
     { label: "Profil", icon: User, path: "/lecturer/profile", active: location.pathname.includes("profile") },

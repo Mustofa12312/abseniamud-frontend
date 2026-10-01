@@ -46,7 +46,13 @@ export default function Monitoring() {
 
   const filteredData = attendanceData.filter(row => {
     const matchesSearch = row.name.toLowerCase().includes(searchQuery.toLowerCase())
-    const matchesStatus = statusFilter === "Semua" || row.status === statusFilter
+    let matchesStatus = true;
+    if (statusFilter !== "Semua") {
+      if (statusFilter === "Hadir") matchesStatus = row.status === "HADIR";
+      else if (statusFilter === "Terlambat") matchesStatus = row.status === "TERLAMBAT";
+      else if (statusFilter === "Alpa") matchesStatus = row.status === "Belum Absen" || row.status === "ALPHA";
+      else if (statusFilter === "Izin") matchesStatus = ["IZIN", "SAKIT", "CUTI"].includes(row.status);
+    }
     return matchesSearch && matchesStatus
   })
 
