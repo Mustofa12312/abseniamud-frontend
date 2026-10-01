@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react"
+import Select from "react-select"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../../components/ui/Card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../../components/ui/Table"
 import { Button } from "../../components/ui/Button"
@@ -416,19 +417,36 @@ export default function StaffMaster() {
               <CardContent className="pt-6 space-y-4 max-h-[70vh] overflow-y-auto">
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-slate-700">Pilih Dosen <span className="text-red-500">*</span></label>
-                  <select
-                    className="w-full p-2.5 rounded-lg border border-slate-300 focus:outline-none focus:ring-2 focus:ring-brand-500"
-                    value={selectedLecturerId}
-                    onChange={(e) => setSelectedLecturerId(e.target.value)}
-                    required
-                  >
-                    <option value="">-- Pilih Dosen --</option>
-                    {availableLecturers.map((lecturer) => (
-                      <option key={lecturer.id} value={lecturer.id}>
-                        {lecturer.name} {lecturer.lecturer?.nidn ? `(NIDN: ${lecturer.lecturer.nidn})` : ''}
-                      </option>
-                    ))}
-                  </select>
+                  <Select
+                    options={availableLecturers.map(lecturer => ({
+                      value: lecturer.id,
+                      label: `${lecturer.name} ${lecturer.lecturer?.nidn ? `(NIDN: ${lecturer.lecturer.nidn})` : ''}`
+                    }))}
+                    onChange={(selectedOption) => setSelectedLecturerId(selectedOption ? selectedOption.value : '')}
+                    value={
+                      selectedLecturerId 
+                        ? { 
+                            value: selectedLecturerId, 
+                            label: availableLecturers.find(l => l.id == selectedLecturerId)?.name + 
+                                   (availableLecturers.find(l => l.id == selectedLecturerId)?.lecturer?.nidn ? ` (NIDN: ${availableLecturers.find(l => l.id == selectedLecturerId).lecturer.nidn})` : '')
+                          }
+                        : null
+                    }
+                    placeholder="-- Cari & Pilih Dosen --"
+                    isClearable
+                    styles={{
+                      control: (base) => ({
+                        ...base,
+                        borderRadius: '0.5rem',
+                        borderColor: '#cbd5e1',
+                        padding: '2px',
+                        boxShadow: 'none',
+                        '&:hover': {
+                          borderColor: '#94a3b8'
+                        }
+                      })
+                    }}
+                  />
                   {availableLecturers.length === 0 && (
                     <p className="text-xs text-amber-600">Sedang memuat data atau tidak ada dosen yang tersedia.</p>
                   )}

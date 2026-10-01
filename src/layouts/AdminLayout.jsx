@@ -11,6 +11,7 @@ import { useAuth } from "../contexts/AuthContext"
 
 export default function AdminLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(true)
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [isProfileOpen, setIsProfileOpen] = useState(false)
   const [isNotifOpen, setIsNotifOpen] = useState(false)
   
@@ -112,6 +113,77 @@ export default function AdminLayout() {
         </div>
       </motion.aside>
 
+      {/* Sidebar Mobile Overlay */}
+      <AnimatePresence>
+        {mobileMenuOpen && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setMobileMenuOpen(false)}
+              className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-40 md:hidden"
+            />
+            <motion.aside
+              initial={{ x: "-100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "-100%" }}
+              transition={{ type: "spring", bounce: 0, duration: 0.3 }}
+              className="fixed inset-y-0 left-0 w-[260px] bg-white border-r border-slate-200 flex flex-col z-50 shadow-xl md:hidden"
+            >
+              <div className="h-16 flex items-center px-4 border-b border-slate-200 justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="h-9 w-9 bg-brand-600 rounded-xl flex items-center justify-center shadow-md text-white font-bold">
+                    IA
+                  </div>
+                  <span className="font-bold text-slate-800 text-lg">IAIMU Admin</span>
+                </div>
+                <button 
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="p-2 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+
+              <div className="flex-1 overflow-y-auto py-6 px-3">
+                {menuGroups.map((group, idx) => (
+                  <div key={idx} className="mb-6">
+                    <h3 className="px-3 text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
+                      {group.title}
+                    </h3>
+                    <div className="space-y-1">
+                      {group.items.map((item) => {
+                        const isActive = location.pathname === item.path
+                        return (
+                          <button
+                            key={item.path}
+                            onClick={() => {
+                              navigate(item.path)
+                              setMobileMenuOpen(false)
+                            }}
+                            className={cn(
+                              "flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-sm font-medium transition-all group relative",
+                              isActive 
+                                ? "text-brand-700 bg-brand-50" 
+                                : "text-slate-600 hover:text-brand-600 hover:bg-slate-100"
+                            )}
+                          >
+                            <item.icon size={20} className={cn("min-w-5", isActive ? "text-brand-600" : "text-slate-400 group-hover:text-brand-500")} />
+                            <span>{item.label}</span>
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </motion.aside>
+          </>
+        )}
+      </AnimatePresence>
+
+
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0">
         {/* Topbar */}
@@ -123,7 +195,12 @@ export default function AdminLayout() {
             >
               <Menu size={20} />
             </button>
-            {/* Mobile menu trigger could go here */}
+            <button 
+              onClick={() => setMobileMenuOpen(true)}
+              className="p-2 -ml-2 rounded-lg text-slate-500 hover:bg-slate-100 md:hidden"
+            >
+              <Menu size={20} />
+            </button>
             <h1 className="text-xl font-bold text-slate-800 hidden sm:block">Dashboard Admin</h1>
           </div>
           

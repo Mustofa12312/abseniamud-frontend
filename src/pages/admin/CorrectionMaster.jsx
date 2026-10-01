@@ -11,6 +11,7 @@ export default function CorrectionMaster() {
   const { success, error } = useToast()
   const [corrections, setCorrections] = useState([])
   const [loading, setLoading] = useState(true)
+  const [statusFilter, setStatusFilter] = useState('ALL')
 
   const fetchCorrections = async () => {
     try {
@@ -60,6 +61,7 @@ export default function CorrectionMaster() {
   }
 
   const pendingCount = corrections.filter(c => c.status === 'PENDING').length
+  const filteredCorrections = corrections.filter(c => statusFilter === 'ALL' ? true : c.status === statusFilter)
 
   return (
     <div className="space-y-6">
@@ -75,6 +77,17 @@ export default function CorrectionMaster() {
           </h2>
           <p className="text-slate-500 mt-1">Tinjau dan proses pengajuan pembenaran absensi dari dosen.</p>
         </div>
+        <div className="flex gap-1 flex-wrap">
+          {[['ALL','Semua'],['PENDING','Menunggu'],['APPROVED','Disetujui'],['REJECTED','Ditolak']].map(([val, label]) => (
+            <button
+              key={val}
+              onClick={() => setStatusFilter(val)}
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                statusFilter === val ? 'bg-brand-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+              }`}
+            >{label} {val === 'PENDING' && pendingCount > 0 ? `(${pendingCount})` : ''}</button>
+          ))}
+        </div>
       </div>
 
       <div className="grid gap-6">
@@ -87,9 +100,9 @@ export default function CorrectionMaster() {
           <CardContent className="p-0">
             {loading ? (
               <div className="p-12 text-center text-slate-500 animate-pulse">Memuat data pengajuan...</div>
-            ) : corrections.length > 0 ? (
+            ) : filteredCorrections.length > 0 ? (
               <div className="divide-y divide-slate-100">
-                {corrections.map((item) => (
+                {filteredCorrections.map((item) => (
                   <div key={item.id} className="p-5 hover:bg-slate-50 transition-colors flex flex-col md:flex-row md:items-start justify-between gap-4 group">
                     <div className="space-y-2 flex-1">
                       <div className="flex flex-wrap items-center gap-2">

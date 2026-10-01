@@ -17,6 +17,7 @@ export default function ReportMaster() {
   const currentDate = new Date()
   const [selectedMonth, setSelectedMonth] = useState(currentDate.getMonth() + 1)
   const [selectedYear, setSelectedYear] = useState(currentDate.getFullYear())
+  const [roleFilter, setRoleFilter] = useState("all")
 
   const fetchReports = async () => {
     setLoading(true)
@@ -64,11 +65,14 @@ export default function ReportMaster() {
 
     setExporting(true)
     try {
-      const blob = await adminService.exportReports(selectedMonth, selectedYear)
+      const blob = await adminService.exportReports(selectedMonth, selectedYear, roleFilter)
       const url = window.URL.createObjectURL(blob)
       const link = document.createElement("a")
       link.href = url
-      link.setAttribute("download", `Laporan_Absensi_${selectedYear}_${selectedMonth}.xlsx`)
+      const monthNames = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember']
+      const categoryLabel = roleFilter === 'all' ? 'Semua' : roleFilter === 'dosen' ? 'Dosen' : 'Tendik'
+      const monthLabel = selectedMonth === 'all' ? 'TahunanPenuh' : (monthNames[Number(selectedMonth) - 1] || selectedMonth)
+      link.setAttribute("download", `Laporan_Absensi_${categoryLabel}_${monthLabel}_${selectedYear}.xlsx`)
       document.body.appendChild(link)
       link.click()
       link.parentNode.removeChild(link)
@@ -107,7 +111,7 @@ export default function ReportMaster() {
             <Download size={18} /> PDF
           </Button>
           <Button onClick={handleExportCSV} disabled={exporting} className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white">
-            <FileSpreadsheet size={18} /> {exporting ? 'Mengekspor...' : 'Export Excel (CSV)'}
+            <FileSpreadsheet size={18} /> {exporting ? 'Mengekspor...' : 'Export Excel'}
           </Button>
         </div>
       </div>
@@ -117,7 +121,17 @@ export default function ReportMaster() {
           <div className="flex items-center gap-2 text-sm font-medium text-slate-700">
             <Filter size={16} className="text-brand-600" /> Filter Laporan
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
+            <select
+              value={roleFilter}
+              onChange={(e) => setRoleFilter(e.target.value)}
+              className="h-9 px-3 border border-slate-300 rounded-md text-sm bg-white focus:ring-2 focus:ring-brand-500 focus:outline-none"
+            >
+              <option value="all">Semua Kategori</option>
+              <option value="dosen">Hanya Dosen</option>
+              <option value="tendik">Hanya Tendik</option>
+            </select>
+            
             <select 
               value={selectedMonth}
               onChange={(e) => setSelectedMonth(e.target.value)}
@@ -170,19 +184,19 @@ export default function ReportMaster() {
                     Memuat data laporan...
                   </TableCell>
                 </TableRow>
-              ) : reports.length === 0 ? (
+              ) : reports.filter(r => roleFilter === 'all' ? true : (roleFilter === 'tendik' ? r.is_tendik : !r.is_tendik)).length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={7} className="h-48">
                     <div className="flex items-center justify-center h-full">
                       <EmptyState 
                         title="Belum Ada Data" 
-                        description="Belum ada data presensi untuk periode ini." 
+                        description="Belum ada data presensi untuk filter ini." 
                       />
                     </div>
                   </TableCell>
                 </TableRow>
               ) : (
-                reports.map((report) => (
+                reports.filter(r => roleFilter === 'all' ? true : (roleFilter === 'tendik' ? r.is_tendik : !r.is_tendik)).map((report) => (
                   <TableRow key={report.id}>
                     <TableCell className="font-medium">{report.name}</TableCell>
                     <TableCell className="text-slate-500">{report.nidn}</TableCell>

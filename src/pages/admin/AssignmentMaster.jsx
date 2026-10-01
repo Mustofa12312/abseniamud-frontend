@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react"
+import Select from "react-select"
 import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/Card"
 import { Badge } from "../../components/ui/Badge"
 import { Button } from "../../components/ui/Button"
@@ -222,18 +223,24 @@ export default function AssignmentMaster() {
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="space-y-1.5">
                   <label className="text-sm font-medium text-slate-700">Dosen</label>
-                  <select 
-                    name="lecturer_id" 
-                    value={formData.lecturer_id} 
-                    onChange={handleChange}
+                  <Select 
+                    options={lecturers.map(lec => ({ value: lec.id, label: lec.name }))}
+                    value={formData.lecturer_id ? { value: formData.lecturer_id, label: lecturers.find(l => l.id == formData.lecturer_id)?.name } : null}
+                    onChange={(selectedOption) => handleChange({ target: { name: 'lecturer_id', value: selectedOption ? selectedOption.value : '' } })}
+                    placeholder="Pilih Dosen"
+                    isClearable
                     required
-                    className="flex h-10 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-500"
-                  >
-                    <option value="" disabled>Pilih Dosen</option>
-                    {lecturers.map(lec => (
-                      <option key={lec.id} value={lec.id}>{lec.name}</option>
-                    ))}
-                  </select>
+                    styles={{
+                      control: (base) => ({
+                        ...base,
+                        borderRadius: '0.375rem',
+                        borderColor: '#cbd5e1',
+                        minHeight: '2.5rem',
+                        boxShadow: 'none',
+                        '&:hover': { borderColor: '#94a3b8' }
+                      })
+                    }}
+                  />
                 </div>
 
                 <div className="space-y-1.5">

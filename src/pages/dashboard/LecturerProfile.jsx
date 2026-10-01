@@ -149,7 +149,14 @@ export default function LecturerProfile() {
           </CardContent>
         </Card>
 
-        <div className="pt-4">
+        <div className="pt-4 space-y-3">
+          <Button 
+            className="w-full h-14 bg-brand-600 hover:bg-brand-700 text-white font-medium text-base shadow-sm"
+            onClick={() => setIsEditModalOpen(true)}
+          >
+            <Edit2 size={18} className="mr-2" /> Lengkapi Profil & Ganti Password
+          </Button>
+
           <Button 
             variant="outline" 
             size="lg" 

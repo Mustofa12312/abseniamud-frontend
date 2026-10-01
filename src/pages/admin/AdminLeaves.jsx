@@ -8,6 +8,7 @@ import { useToast } from "../../contexts/ToastContext"
 export default function AdminLeaves() {
   const [leaves, setLeaves] = useState([])
   const [loading, setLoading] = useState(true)
+  const [statusFilter, setStatusFilter] = useState('ALL')
   const { success, error } = useToast()
 
   const fetchLeaves = async () => {
@@ -42,9 +43,22 @@ export default function AdminLeaves() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-slate-800">Persetujuan Izin / Cuti</h1>
-        <p className="text-sm text-slate-500">Kelola pengajuan ketidakhadiran dari dosen dan tendik.</p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-800">Persetujuan Izin / Cuti</h1>
+          <p className="text-sm text-slate-500">Kelola pengajuan ketidakhadiran dari dosen dan tendik.</p>
+        </div>
+        <div className="flex gap-1 flex-wrap">
+          {[['ALL','Semua'],['PENDING','Menunggu'],['APPROVED','Disetujui'],['REJECTED','Ditolak']].map(([val, label]) => (
+            <button
+              key={val}
+              onClick={() => setStatusFilter(val)}
+              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                statusFilter === val ? 'bg-brand-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+              }`}
+            >{label}</button>
+          ))}
+        </div>
       </div>
 
       <Card>
@@ -67,12 +81,12 @@ export default function AdminLeaves() {
                     <Loader2 size={24} className="animate-spin mx-auto mb-2" /> Memuat data...
                   </td>
                 </tr>
-              ) : leaves.length === 0 ? (
+              ) : leaves.filter(l => statusFilter === 'ALL' ? true : l.status === statusFilter).length === 0 ? (
                 <tr>
-                  <td colSpan="6" className="px-6 py-8 text-center text-slate-500">Belum ada pengajuan izin/cuti.</td>
+                  <td colSpan="6" className="px-6 py-8 text-center text-slate-500">Belum ada pengajuan izin/cuti untuk filter ini.</td>
                 </tr>
               ) : (
-                leaves.map((item) => (
+                leaves.filter(l => statusFilter === 'ALL' ? true : l.status === statusFilter).map((item) => (
                   <tr key={item.id} className="hover:bg-slate-50">
                     <td className="px-6 py-4">
                       <div className="font-semibold text-slate-800">{item.user?.name}</div>

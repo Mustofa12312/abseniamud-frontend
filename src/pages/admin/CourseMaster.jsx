@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react"
+import Select from "react-select"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../../components/ui/Card"
 import { Button } from "../../components/ui/Button"
 import { Input } from "../../components/ui/Input"
@@ -229,32 +230,44 @@ export default function CourseMaster() {
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="space-y-1.5">
                   <label className="text-sm font-medium text-slate-700">Fakultas / Prodi</label>
-                  <select 
-                    name="faculty_id" 
-                    value={formData.faculty_id} 
-                    onChange={handleChange} 
+                  <Select 
+                    options={faculties.map(f => ({ value: f.id, label: f.name }))}
+                    value={formData.faculty_id ? { value: formData.faculty_id, label: faculties.find(f => f.id == formData.faculty_id)?.name } : null}
+                    onChange={(selectedOption) => handleChange({ target: { name: 'faculty_id', value: selectedOption ? selectedOption.value : '' } })}
+                    placeholder="Pilih Fakultas/Prodi"
+                    isClearable
                     required
-                    className="flex h-10 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-500"
-                  >
-                    <option value="" disabled>Pilih Fakultas/Prodi</option>
-                    {faculties.map(f => (
-                      <option key={f.id} value={f.id}>{f.name}</option>
-                    ))}
-                  </select>
+                    styles={{
+                      control: (base) => ({
+                        ...base,
+                        borderRadius: '0.375rem',
+                        borderColor: '#cbd5e1',
+                        minHeight: '2.5rem',
+                        boxShadow: 'none',
+                        '&:hover': { borderColor: '#94a3b8' }
+                      })
+                    }}
+                  />
                 </div>
                 <div className="space-y-1.5">
                   <label className="text-sm font-medium text-slate-700">Dosen Pengampu</label>
-                  <select 
-                    name="lecturer_id" 
-                    value={formData.lecturer_id} 
-                    onChange={handleChange} 
-                    className="flex h-10 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-500"
-                  >
-                    <option value="">Belum Ditentukan</option>
-                    {lecturers.map(l => (
-                      <option key={l.id} value={l.id}>{l.name}</option>
-                    ))}
-                  </select>
+                  <Select 
+                    options={lecturers.map(l => ({ value: l.id, label: l.name }))}
+                    value={formData.lecturer_id ? { value: formData.lecturer_id, label: lecturers.find(l => l.id == formData.lecturer_id)?.name } : null}
+                    onChange={(selectedOption) => handleChange({ target: { name: 'lecturer_id', value: selectedOption ? selectedOption.value : '' } })}
+                    placeholder="Pilih Dosen"
+                    isClearable
+                    styles={{
+                      control: (base) => ({
+                        ...base,
+                        borderRadius: '0.375rem',
+                        borderColor: '#cbd5e1',
+                        minHeight: '2.5rem',
+                        boxShadow: 'none',
+                        '&:hover': { borderColor: '#94a3b8' }
+                      })
+                    }}
+                  />
                 </div>
                 <div className="space-y-1.5">
                   <label className="text-sm font-medium text-slate-700">Nama Mata Kuliah</label>

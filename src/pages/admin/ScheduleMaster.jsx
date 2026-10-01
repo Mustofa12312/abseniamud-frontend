@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react"
+import Select from "react-select"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../../components/ui/Card"
 import { Badge } from "../../components/ui/Badge"
 import { Button } from "../../components/ui/Button"
@@ -287,24 +288,34 @@ export default function ScheduleMaster() {
 
                 <div className="space-y-1.5">
                   <label className="text-sm font-medium text-slate-700">Mata Kuliah</label>
-                  <select 
-                    name="course_id" 
-                    value={formData.course_id} 
-                    onChange={handleChange} 
+                  <Select
+                    options={[
+                      ...courses.map(c => ({ value: c.id, label: c.name })),
+                      ...(editingSchedule && formData.course_id && !courses.find(c => c.id === formData.course_id)
+                        ? [{ value: formData.course_id, label: editingSchedule.course_name + ' (Tersimpan)' }]
+                        : [])
+                    ]}
+                    value={formData.course_id ? {
+                      value: formData.course_id,
+                      label: courses.find(c => c.id == formData.course_id)?.name ||
+                        (editingSchedule ? editingSchedule.course_name : 'Mata Kuliah')
+                    } : null}
+                    onChange={(opt) => handleChange({ target: { name: 'course_id', value: opt ? opt.value : '' } })}
+                    placeholder={!selectedFaculty ? 'Pilih Fakultas Dulu' : courses.length === 0 ? 'Tidak Ada MK' : 'Pilih Mata Kuliah'}
+                    isDisabled={!selectedFaculty}
+                    isClearable
                     required
-                    className="flex h-10 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-500"
-                  >
-                    <option value="" disabled>
-                      {(!selectedFaculty) ? "Pilih Fakultas Dulu" : (courses.length === 0 ? "Tidak Ada MK" : "Pilih Mata Kuliah")}
-                    </option>
-                    {courses.map(c => (
-                      <option key={c.id} value={c.id}>{c.name}</option>
-                    ))}
-                    {/* Preserve existing value when editing if not in list */}
-                    {editingSchedule && formData.course_id && !courses.find(c => c.id === formData.course_id) && (
-                      <option value={formData.course_id}>{editingSchedule.course_name} (Tersimpan)</option>
-                    )}
-                  </select>
+                    styles={{
+                      control: (base) => ({
+                        ...base,
+                        borderRadius: '0.375rem',
+                        borderColor: '#cbd5e1',
+                        minHeight: '2.5rem',
+                        boxShadow: 'none',
+                        '&:hover': { borderColor: '#94a3b8' }
+                      })
+                    }}
+                  />
                 </div>
                 
                 <div className="space-y-1.5 p-3 bg-slate-50 border border-slate-200 rounded-lg">

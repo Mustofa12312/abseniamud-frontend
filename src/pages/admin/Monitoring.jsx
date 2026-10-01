@@ -8,34 +8,36 @@ import { Search, Filter, Eye, MapPin, Clock, Smartphone, User } from "lucide-rea
 import { adminService } from "../../services/admin"
 
 export default function Monitoring() {
-  const [date, setDate] = useState("") 
+  const today = new Date().toISOString().split('T')[0]
+  const [date, setDate] = useState("")
+  const [selectedDate, setSelectedDate] = useState(today)
   const [attendanceData, setAttendanceData] = useState([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState("")
 
   // Modal State
-  const [isFilterModalOpen, setIsFilterModalOpen] = useState(false)
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false)
   const [selectedRecord, setSelectedRecord] = useState(null)
   const [statusFilter, setStatusFilter] = useState("Semua")
 
-  useEffect(() => {
-    const fetchAttendance = async () => {
-      try {
-        setLoading(true)
-        const res = await adminService.getAttendance()
-        if (res.success) {
-          setAttendanceData(res.data)
-          setDate(res.date)
-        }
-      } catch (err) {
-        console.error("Failed to fetch attendance data", err)
-      } finally {
-        setLoading(false)
+  const fetchAttendance = async (dateParam) => {
+    try {
+      setLoading(true)
+      const res = await adminService.getAttendance(dateParam)
+      if (res.success) {
+        setAttendanceData(res.data)
+        setDate(res.date)
       }
+    } catch (err) {
+      console.error("Failed to fetch attendance data", err)
+    } finally {
+      setLoading(false)
     }
-    fetchAttendance()
-  }, [])
+  }
+
+  useEffect(() => {
+    fetchAttendance(selectedDate)
+  }, [selectedDate])
 
   const handleOpenDetail = (record) => {
     setSelectedRecord(record)
@@ -57,17 +59,30 @@ export default function Monitoring() {
             {loading ? 'Memuat tanggal...' : `Pantau kehadiran dosen pada tanggal ${date}`}
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <input
+            type="date"
+            value={selectedDate}
+            onChange={(e) => setSelectedDate(e.target.value)}
+            max={today}
+            className="h-9 px-3 border border-slate-300 rounded-md text-sm bg-white focus:ring-2 focus:ring-brand-500 focus:outline-none"
+          />
           <Input 
             icon={Search} 
             placeholder="Cari nama dosen..." 
-            className="w-full sm:w-64"
+            className="w-full sm:w-56"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
-          <Button onClick={() => setIsFilterModalOpen(true)} variant={statusFilter !== "Semua" ? "default" : "outline"} className="px-3">
-            <Filter size={18} />
-          </Button>
+          <div className="flex gap-1">
+            {['Semua','Hadir','Terlambat','Alpa','Izin'].map(s => (
+              <button
+                key={s}
+                onClick={() => setStatusFilter(s)}
+                className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${statusFilter === s ? 'bg-brand-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
+              >{s}</button>
+            ))}
+          </div>
         </div>
       </div>
 
@@ -120,42 +135,7 @@ export default function Monitoring() {
         </CardContent>
       </Card>
 
-      {/* Filter Modal */}
-      {isFilterModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
-          <Card className="w-full max-w-sm shadow-xl">
-            <CardHeader>
-              <CardTitle>Filter Data</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="space-y-1.5">
-                  <label className="text-sm font-medium text-slate-700">Status Kehadiran</label>
-                  <select 
-                    value={statusFilter} 
-                    onChange={(e) => setStatusFilter(e.target.value)}
-                    className="flex h-10 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-500"
-                  >
-                    <option value="Semua">Semua</option>
-                    <option value="Hadir">Hadir</option>
-                    <option value="Terlambat">Terlambat</option>
-                    <option value="Alpa">Alpa</option>
-                    <option value="Izin">Izin</option>
-                  </select>
-                </div>
-                <div className="flex gap-3 pt-4">
-                  <Button type="button" variant="outline" className="w-full" onClick={() => setIsFilterModalOpen(false)}>
-                    Tutup
-                  </Button>
-                  <Button type="button" onClick={() => setIsFilterModalOpen(false)} className="w-full">
-                    Terapkan
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
+      {/* (Filter modal removed - inline filter buttons used instead) */}
 
       {/* Detail Modal */}
       {isDetailModalOpen && selectedRecord && (

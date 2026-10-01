@@ -1,6 +1,7 @@
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/Card"
-import { Users, UserCheck, Clock, Map, MapPin } from "lucide-react"
+import { Users, UserCheck, Clock, Map, MapPin, RefreshCw } from "lucide-react"
+import { Button } from "../../components/ui/Button"
 import { adminService } from "../../services/admin"
 import { EmptyState } from "../../components/ui/EmptyState"
 
@@ -18,36 +19,50 @@ export default function AdminDashboard() {
     { text: "text-purple-600", bg: "bg-purple-100" }
   ]
 
-  useEffect(() => {
-    const fetchStats = async () => {
-      try {
-        const res = await adminService.getDashboardStats()
-        if (res.success) {
-          // Merge icons and colors to the API stats
-          const mappedStats = res.data.stats.map((s, i) => ({
-            ...s,
-            icon: icons[i % icons.length],
-            color: colors[i % colors.length].text,
-            bg: colors[i % colors.length].bg
-          }))
-          setStats(mappedStats)
-          setRecentActivity(res.data.recent_activity)
-          setChartData(res.data.chart_data || [])
-        }
-      } catch (err) {
-        console.error("Failed to load dashboard stats", err)
-      } finally {
-        setLoading(false)
+  const [lastUpdated, setLastUpdated] = useState(null)
+  const [refreshing, setRefreshing] = useState(false)
+
+  const fetchStats = useCallback(async () => {
+    try {
+      setRefreshing(true)
+      const res = await adminService.getDashboardStats()
+      if (res.success) {
+        const mappedStats = res.data.stats.map((s, i) => ({
+          ...s,
+          icon: icons[i % icons.length],
+          color: colors[i % colors.length].text,
+          bg: colors[i % colors.length].bg
+        }))
+        setStats(mappedStats)
+        setRecentActivity(res.data.recent_activity)
+        setChartData(res.data.chart_data || [])
+        setLastUpdated(new Date())
       }
+    } catch (err) {
+      console.error("Failed to load dashboard stats", err)
+    } finally {
+      setLoading(false)
+      setRefreshing(false)
     }
-    fetchStats()
   }, [])
+
+  useEffect(() => {
+    fetchStats()
+    const interval = setInterval(fetchStats, 5 * 60 * 1000) // auto-refresh every 5 minutes
+    return () => clearInterval(interval)
+  }, [fetchStats])
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold tracking-tight text-slate-800">Ringkasan Hari Ini</h2>
-        <p className="text-slate-500 mt-1">Pantau statistik presensi secara real-time.</p>
+      <div className="flex items-start justify-between">
+        <div>
+          <h2 className="text-2xl font-bold tracking-tight text-slate-800">Ringkasan Hari Ini</h2>
+          <p className="text-slate-500 mt-1">Pantau statistik presensi secara real-time.</p>
+          {lastUpdated && <p className="text-xs text-slate-400 mt-1">Diperbarui: {lastUpdated.toLocaleTimeString('id-ID')}</p>}
+        </div>
+        <Button variant="outline" size="sm" onClick={fetchStats} disabled={refreshing} className="flex items-center gap-1.5 shrink-0">
+          <RefreshCw size={14} className={refreshing ? 'animate-spin' : ''} /> Refresh
+        </Button>
       </div>
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">

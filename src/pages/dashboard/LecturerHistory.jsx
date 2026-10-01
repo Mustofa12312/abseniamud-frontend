@@ -9,13 +9,24 @@ export default function LecturerHistory() {
   const [history, setHistory] = useState([])
   const [summary, setSummary] = useState(null)
   const [loading, setLoading] = useState(true)
+  
+  const now = new Date()
+  const [selectedMonth, setSelectedMonth] = useState(now.getMonth() + 1)
+  const [selectedYear, setSelectedYear] = useState(now.getFullYear())
+  
+  const months = [
+    'Januari','Februari','Maret','April','Mei','Juni',
+    'Juli','Agustus','September','Oktober','November','Desember'
+  ]
+  const yearOptions = Array.from({ length: 3 }, (_, i) => now.getFullYear() - i)
 
   useEffect(() => {
     const fetchData = async () => {
+      setLoading(true)
       try {
         const [historyRes, summaryRes] = await Promise.all([
-          attendanceService.getHistory(),
-          attendanceService.getSummary()
+          attendanceService.getHistory(selectedMonth, selectedYear),
+          attendanceService.getSummary(selectedMonth, selectedYear)
         ])
         
         if (historyRes.success) setHistory(historyRes.data)
@@ -28,7 +39,7 @@ export default function LecturerHistory() {
       }
     }
     fetchData()
-  }, [])
+  }, [selectedMonth, selectedYear])
 
   const getStatusColor = (status) => {
     switch(status) {
@@ -41,13 +52,31 @@ export default function LecturerHistory() {
 
   return (
     <div className="space-y-6 pb-20">
-      <div className="flex items-center gap-3 mb-6">
-        <div className="h-10 w-10 rounded-full bg-brand-100 flex items-center justify-center text-brand-600">
-          <CalendarDays size={20} />
+      <div className="flex items-start justify-between gap-3 mb-6">
+        <div className="flex items-center gap-3">
+          <div className="h-10 w-10 rounded-full bg-brand-100 flex items-center justify-center text-brand-600">
+            <CalendarDays size={20} />
+          </div>
+          <div>
+            <h1 className="text-xl font-bold text-slate-800">Riwayat & Rekap</h1>
+            <p className="text-sm text-slate-500">{summary?.period || `${months[selectedMonth-1]} ${selectedYear}`}</p>
+          </div>
         </div>
-        <div>
-          <h1 className="text-xl font-bold text-slate-800">Riwayat & Rekap</h1>
-          <p className="text-sm text-slate-500">{summary?.period || 'Bulan Ini'}</p>
+        <div className="flex gap-2">
+          <select
+            value={selectedMonth}
+            onChange={e => setSelectedMonth(Number(e.target.value))}
+            className="h-8 px-2 border border-slate-300 rounded-md text-xs bg-white focus:outline-none focus:ring-2 focus:ring-brand-500"
+          >
+            {months.map((m, i) => <option key={i+1} value={i+1}>{m}</option>)}
+          </select>
+          <select
+            value={selectedYear}
+            onChange={e => setSelectedYear(Number(e.target.value))}
+            className="h-8 px-2 border border-slate-300 rounded-md text-xs bg-white focus:outline-none focus:ring-2 focus:ring-brand-500"
+          >
+            {yearOptions.map(y => <option key={y} value={y}>{y}</option>)}
+          </select>
         </div>
       </div>
 
