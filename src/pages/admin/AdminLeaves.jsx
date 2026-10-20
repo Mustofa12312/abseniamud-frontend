@@ -11,6 +11,7 @@ export default function AdminLeaves() {
   const [statusFilter, setStatusFilter] = useState('ALL')
   const { success, error } = useToast()
   const [confirmAction, setConfirmAction] = useState(null) // {id, status}
+  const [submitting, setSubmitting] = useState(false)
 
   const fetchLeaves = async () => {
     try {
@@ -20,7 +21,7 @@ export default function AdminLeaves() {
         setLeaves(res.data.data)
       }
     } catch (err) {
-      error("Gagal memuat data izin")
+      error(err.response?.data?.message || "Gagal memuat data izin")
     } finally {
       setLoading(false)
     }
@@ -32,12 +33,21 @@ export default function AdminLeaves() {
 
   const handleUpdateStatus = async (id, status) => {
     try {
-      await api.put(`/admin/leaves/${id}`, { status })
-      success(`Status berhasil diubah menjadi ${status === 'APPROVED' ? 'Disetujui' : 'Ditolak'}`)
-      setConfirmAction(null)
-      fetchLeaves()
+      setSubmitting(true)
+      const res = await api.put(`/admin/leaves/${id}`, { status })
+      if (res.data?.success) {
+        success(`Status berhasil diubah menjadi ${status === 'APPROVED' ? 'Disetujui' : 'Ditolak'}`)
+        setLeaves(prev => prev.map(item => item.id === id ? { ...item, status } : item))
+        setConfirmAction(null)
+        fetchLeaves()
+      } else {
+        error(res.data?.message || "Gagal mengubah status")
+      }
     } catch (err) {
-      error("Gagal mengubah status")
+      console.error(err)
+      error(err.response?.data?.message || "Gagal mengubah status pengajuan izin")
+    } finally {
+      setSubmitting(false)
     }
   }
 
@@ -142,14 +152,29 @@ export default function AdminLeaves() {
               </h3>
               <p className="text-sm text-slate-500 mb-6">Tindakan ini akan memperbarui status pengajuan izin/cuti.</p>
               <div className="flex gap-3">
-                <button onClick={() => setConfirmAction(null)} className="flex-1 px-4 py-2 border border-slate-300 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors">
+                <button 
+                  onClick={() => setConfirmAction(null)} 
+                  disabled={submitting}
+                  className="flex-1 px-4 py-2 border border-slate-300 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors disabled:opacity-50"
+                >
                   Batal
                 </button>
                 <button
                   onClick={() => handleUpdateStatus(confirmAction.id, confirmAction.status)}
-                  className={`flex-1 px-4 py-2 text-white rounded-lg text-sm font-medium transition-colors ${confirmAction.status === 'APPROVED' ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-red-600 hover:bg-red-700'}`}
+                  disabled={submitting}
+                  className={`flex-1 px-4 py-2 text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-50 flex items-center justify-center gap-2 ${
+                    confirmAction.status === 'APPROVED' ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-red-600 hover:bg-red-700'
+                  }`}
                 >
-                  {confirmAction.status === 'APPROVED' ? 'Ya, Setujui' : 'Ya, Tolak'}
+                  {submitting ? (
+                    <>
+                      <Loader2 size={16} className="animate-spin" /> Memproses...
+                    </>
+                  ) : confirmAction.status === 'APPROVED' ? (
+                    'Ya, Setujui'
+                  ) : (
+                    'Ya, Tolak'
+                  )}
                 </button>
               </div>
             </CardContent>
