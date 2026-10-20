@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../..
 import { Button } from "../../components/ui/Button"
 import { Input } from "../../components/ui/Input"
 import { Badge } from "../../components/ui/Badge"
-import { Users, Plus, Pencil, Trash2, Search, UserCheck } from "lucide-react"
+import { Users, Plus, Pencil, Trash2, Search, UserCheck, Smartphone, KeyRound } from "lucide-react"
 import { adminService } from "../../services/admin"
 import { useToast } from "../../contexts/ToastContext"
 
@@ -96,6 +96,19 @@ export default function UserMaster() {
     }
   }
 
+  const handleResetDevice = async (user) => {
+    if (confirm(`Reset ikatan perangkat HP untuk "${user.name}"? Sesi aktif di HP lama akan dicabut dan pengguna dapat login dari HP baru.`)) {
+      try {
+        const res = await adminService.resetDevice(user.id)
+        if (res.success) {
+          success(res.message || "Perangkat berhasil di-reset.")
+        }
+      } catch (err) {
+        error(err.response?.data?.message || "Gagal mereset perangkat pengguna.")
+      }
+    }
+  }
+
   const getRoleBadge = (role) => {
     switch(role) {
       case 'super_admin': return <Badge variant="outline" className="bg-purple-50 text-purple-600 border-purple-200">Super Admin</Badge>
@@ -163,11 +176,21 @@ export default function UserMaster() {
                       <td className="px-6 py-4 text-slate-600">{user.email}</td>
                       <td className="px-6 py-4">{getRoleBadge(user.role)}</td>
                       <td className="px-6 py-4 text-slate-500">{user.created_at}</td>
-                      <td className="px-6 py-4 text-right space-x-2">
-                        <Button variant="outline" size="sm" onClick={() => openEdit(user)} className="h-8 px-2 text-slate-600">
+                      <td className="px-6 py-4 text-right space-x-1.5">
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          onClick={() => handleResetDevice(user)} 
+                          title="Reset Ikatan Perangkat HP (Ganti Perangkat)" 
+                          className="h-8 px-2 text-amber-600 border-amber-200 hover:bg-amber-50"
+                        >
+                          <Smartphone size={14} className="mr-1" />
+                          <span className="text-xs">Reset HP</span>
+                        </Button>
+                        <Button variant="outline" size="sm" onClick={() => openEdit(user)} className="h-8 px-2 text-slate-600" title="Edit Akun">
                           <Pencil size={14} />
                         </Button>
-                        <Button variant="outline" size="sm" onClick={() => handleDelete(user.id)} className="h-8 px-2 text-rose-600 border-rose-200 hover:bg-rose-50">
+                        <Button variant="outline" size="sm" onClick={() => handleDelete(user.id)} className="h-8 px-2 text-rose-600 border-rose-200 hover:bg-rose-50" title="Hapus Akun">
                           <Trash2 size={14} />
                         </Button>
                       </td>

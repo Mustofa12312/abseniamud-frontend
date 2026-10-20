@@ -18,6 +18,22 @@ export const masterDataService = {
     const response = await api.delete(`/admin/rooms/${id}`);
     return response.data;
   },
+  exportRooms: async () => {
+    const response = await api.get('/admin/rooms/export', { responseType: 'blob' });
+    return response.data;
+  },
+  importRooms: async (formData) => {
+    const response = await api.post('/admin/rooms/import', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    });
+    return response.data;
+  },
+  downloadRoomTemplate: async () => {
+    const response = await api.get('/admin/rooms/template', { responseType: 'blob' });
+    return response.data;
+  },
 
   // Faculties
   getFaculties: async () => {

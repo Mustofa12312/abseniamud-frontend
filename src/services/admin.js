@@ -113,6 +113,11 @@ export const adminService = {
     return response.data;
   },
 
+  resetDevice: async (id) => {
+    const response = await api.post(`/admin/users/${id}/reset-device`);
+    return response.data;
+  },
+
   // Staff (Tendik) CRUD
   getStaff: async () => {
     const response = await api.get('/admin/staff');

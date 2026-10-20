@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react"
 import { Link } from "react-router-dom"
-import { MapPin, Clock, Calendar, CheckCircle2, XCircle, LogIn, LogOut, AlertCircle, Loader2, PartyPopper, CheckCircle, FileX, Info, Send, Megaphone, ChevronRight, BookOpen, Lock, X, Save } from "lucide-react"
+import { MapPin, Clock, Calendar, CheckCircle2, XCircle, LogIn, LogOut, AlertCircle, Loader2, PartyPopper, CheckCircle, FileX, Info, Send, Megaphone, ChevronRight, BookOpen, Lock, X, Save, Smartphone } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import { Button } from "../../components/ui/Button"
 import { Input } from "../../components/ui/Input"
@@ -303,6 +303,22 @@ export default function LecturerDashboard() {
           <span>Izinkan akses lokasi pada browser untuk dapat melakukan presensi.</span>
         </div>
       )}
+
+      {/* Mobile App Official Recommendation Banner */}
+      <div className="flex items-center justify-between gap-3 bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200/80 rounded-xl p-3 shadow-sm">
+        <div className="flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded-lg bg-emerald-100 flex items-center justify-center text-emerald-800 shrink-0">
+            <Smartphone size={18} />
+          </div>
+          <div>
+            <p className="text-xs font-bold text-emerald-950">Rekomendasi Presensi Kampus: IAIMU Mobile Android</p>
+            <p className="text-[11px] text-emerald-800">Presensi via HP Android dilengkapi proteksi anti-mock GPS, radar geofence, dan binding hardware resmi.</p>
+          </div>
+        </div>
+        <span className="hidden sm:inline-flex text-[11px] font-semibold text-emerald-800 bg-white px-2.5 py-1 rounded-full border border-emerald-200 shrink-0 shadow-xs">
+          Rilis v1.0.0
+        </span>
+      </div>
 
       {/* Action Buttons */}
       <div className="grid grid-cols-2 gap-4">

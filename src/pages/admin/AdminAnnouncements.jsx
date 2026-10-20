@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react"
-import { Bell, Plus, Edit2, Trash2, Loader2, Megaphone } from "lucide-react"
+import { Bell, Plus, Edit2, Trash2, Loader2, Megaphone, Smartphone } from "lucide-react"
 import { Button } from "../../components/ui/Button"
 import { Input } from "../../components/ui/Input"
 import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/Card"
@@ -116,20 +116,28 @@ export default function AdminAnnouncements() {
                   onChange={e => setFormData({...formData, content: e.target.value})}
                 ></textarea>
               </div>
-              <div className="flex items-center gap-6">
-                <label className="flex items-center gap-2 text-sm cursor-pointer">
-                  <input type="checkbox" checked={formData.is_active} onChange={e => setFormData({...formData, is_active: e.target.checked})} className="rounded text-brand-600 focus:ring-brand-500" />
-                  Aktif (Tampil)
-                </label>
-                <label className="flex items-center gap-2 text-sm cursor-pointer">
-                  <input type="checkbox" checked={formData.is_important} onChange={e => setFormData({...formData, is_important: e.target.checked})} className="rounded text-red-600 focus:ring-red-500" />
-                  Penting (Tandai Merah)
-                </label>
+              <div className="space-y-2">
+                <div className="flex items-center gap-6">
+                  <label className="flex items-center gap-2 text-sm cursor-pointer font-medium">
+                    <input type="checkbox" checked={formData.is_active} onChange={e => setFormData({...formData, is_active: e.target.checked})} className="rounded text-brand-600 focus:ring-brand-500" />
+                    Aktif (Tampil di Sistem)
+                  </label>
+                  <label className="flex items-center gap-2 text-sm cursor-pointer font-medium">
+                    <input type="checkbox" checked={formData.is_important} onChange={e => setFormData({...formData, is_important: e.target.checked})} className="rounded text-red-600 focus:ring-red-500" />
+                    Penting (Broadcast ke Android)
+                  </label>
+                </div>
+                {formData.is_important && (
+                  <div className="p-3 bg-emerald-50 rounded-lg border border-emerald-200 text-xs text-emerald-800 flex items-center gap-2 animate-in fade-in">
+                    <Smartphone size={16} className="text-emerald-700 shrink-0" />
+                    <span>Pengumuman ini otomatis disinkronkan sebagai <strong>Push Notification Prioritas Tinggi</strong> pada aplikasi Android seluruh dosen dan tendik.</span>
+                  </div>
+                )}
               </div>
               <div className="flex justify-end gap-3 pt-4 border-t">
                 <Button type="button" variant="outline" onClick={() => setShowForm(false)}>Batal</Button>
                 <Button type="submit" disabled={submitLoading}>
-                  {submitLoading ? <Loader2 size={16} className="animate-spin" /> : 'Simpan'}
+                  {submitLoading ? <Loader2 size={16} className="animate-spin" /> : 'Simpan Pengumuman'}
                 </Button>
               </div>
             </form>
@@ -169,7 +177,11 @@ export default function AdminAnnouncements() {
                         <div>
                           <div className="font-semibold text-slate-800 flex items-center gap-2">
                             {item.title}
-                            {item.is_important && <span className="text-[10px] bg-red-100 text-red-600 px-2 py-0.5 rounded-full uppercase font-bold tracking-wider">Penting</span>}
+                            {item.is_important && (
+                              <span className="inline-flex items-center gap-1 text-[10px] bg-red-100 text-red-700 border border-red-200 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">
+                                <Smartphone size={10} /> Push Alert HP
+                              </span>
+                            )}
                           </div>
                           <div className="text-xs text-slate-500 mt-1 line-clamp-1">{item.content}</div>
                           <div className="text-[10px] text-slate-400 mt-1">
