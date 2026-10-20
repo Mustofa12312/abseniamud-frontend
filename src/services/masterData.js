@@ -52,6 +52,22 @@ export const masterDataService = {
     const response = await api.delete(`/admin/faculties/${id}`);
     return response.data;
   },
+  exportFaculties: async () => {
+    const response = await api.get('/admin/faculties/export', { responseType: 'blob' });
+    return response.data;
+  },
+  importFaculties: async (formData) => {
+    const response = await api.post('/admin/faculties/import', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    });
+    return response.data;
+  },
+  downloadFacultyTemplate: async () => {
+    const response = await api.get('/admin/faculties/template', { responseType: 'blob' });
+    return response.data;
+  },
 
   // Courses
   getCourses: async (facultyId = null, semester = null) => {
