@@ -22,10 +22,18 @@ export const adminService = {
   },
 
   
-  getReports: async (month, year) => {
+  getReports: async (month, year, role = 'all') => {
     let url = '/admin/reports';
+    let params = [];
     if (month && year) {
-        url += `?month=${month}&year=${year}`;
+      params.push(`month=${month}`);
+      params.push(`year=${year}`);
+    }
+    if (role && role !== 'all') {
+      params.push(`role=${role}`);
+    }
+    if (params.length > 0) {
+      url += '?' + params.join('&');
     }
     const response = await api.get(url);
     return response.data;
@@ -35,16 +43,21 @@ export const adminService = {
     let url = '/admin/reports/export';
     let params = [];
     if (month && year) {
-        params.push(`month=${month}`);
-        params.push(`year=${year}`);
+      params.push(`month=${month}`);
+      params.push(`year=${year}`);
     }
     if (role && role !== 'all') {
-        params.push(`role=${role}`);
+      params.push(`role=${role}`);
     }
     if (params.length > 0) {
-        url += '?' + params.join('&');
+      url += '?' + params.join('&');
     }
-    const response = await api.get(url, { responseType: 'blob' });
+    const response = await api.get(url, {
+      responseType: 'blob',
+      headers: {
+        Accept: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/octet-stream, */*'
+      }
+    });
     return response.data;
   },
 

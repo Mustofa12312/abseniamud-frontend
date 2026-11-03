@@ -8,7 +8,7 @@ import { useToast } from "../../contexts/ToastContext"
 import { EmptyState } from "../../components/ui/EmptyState"
 
 export default function ReportMaster() {
-  const { error } = useToast()
+  const { success, error } = useToast()
   const [reports, setReports] = useState([])
   const [periodStr, setPeriodStr] = useState("")
   const [loading, setLoading] = useState(true)
@@ -22,7 +22,7 @@ export default function ReportMaster() {
   const fetchReports = async () => {
     setLoading(true)
     try {
-      const res = await adminService.getReports(selectedMonth, selectedYear)
+      const res = await adminService.getReports(selectedMonth, selectedYear, roleFilter)
       if (res.success) {
         setReports(res.data)
         setPeriodStr(res.period)
@@ -55,7 +55,7 @@ export default function ReportMaster() {
 
   useEffect(() => {
     fetchReports()
-  }, [selectedMonth, selectedYear])
+  }, [selectedMonth, selectedYear, roleFilter])
 
   const handleExportCSV = async () => {
     if (reports.length === 0) {
@@ -66,7 +66,19 @@ export default function ReportMaster() {
     setExporting(true)
     try {
       const blob = await adminService.exportReports(selectedMonth, selectedYear, roleFilter)
-      const url = window.URL.createObjectURL(blob)
+      
+      // If the backend sent an error JSON disguised as blob
+      if (blob.type && blob.type.includes("json")) {
+        const text = await blob.text()
+        const json = JSON.parse(text)
+        error(json.message || "Gagal mengekspor data laporan.")
+        return
+      }
+
+      const excelBlob = new Blob([blob], {
+        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+      })
+      const url = window.URL.createObjectURL(excelBlob)
       const link = document.createElement("a")
       link.href = url
       const monthNames = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember']
@@ -75,10 +87,28 @@ export default function ReportMaster() {
       link.setAttribute("download", `Laporan_Absensi_${categoryLabel}_${monthLabel}_${selectedYear}.xlsx`)
       document.body.appendChild(link)
       link.click()
-      link.parentNode.removeChild(link)
-      window.URL.revokeObjectURL(url)
+      
+      setTimeout(() => {
+        if (link.parentNode) {
+          link.parentNode.removeChild(link)
+        }
+        window.URL.revokeObjectURL(url)
+      }, 500)
+
+      success("File laporan Excel berhasil diunduh!")
     } catch (err) {
-      error("Gagal mengekspor data laporan.")
+      console.error("Export error:", err)
+      let msg = "Gagal mengekspor data laporan."
+      if (err.response?.data instanceof Blob) {
+        try {
+          const text = await err.response.data.text()
+          const json = JSON.parse(text)
+          if (json.message) msg = json.message
+        } catch (_) {}
+      } else if (err.response?.data?.message) {
+        msg = err.response.data.message
+      }
+      error(msg)
     } finally {
       setExporting(false)
     }
