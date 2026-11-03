@@ -121,14 +121,22 @@ export default function RoomMaster() {
     try {
       setSubmitting(true)
       const blob = await masterDataService.exportRooms()
+      if (blob.type && blob.type.includes("json")) {
+        const text = await blob.text()
+        const json = JSON.parse(text)
+        error(json.message || "Gagal mengekspor data ruangan.")
+        return
+      }
       const url = window.URL.createObjectURL(new Blob([blob], { type: 'text/csv;charset=utf-8;' }))
       const link = document.createElement("a")
       link.href = url
       link.setAttribute("download", `Data_Ruangan_${new Date().toISOString().slice(0, 10)}.csv`)
       document.body.appendChild(link)
       link.click()
-      link.parentNode?.removeChild(link)
-      window.URL.revokeObjectURL(url)
+      setTimeout(() => {
+        if (link.parentNode) link.parentNode.removeChild(link)
+        window.URL.revokeObjectURL(url)
+      }, 500)
       success("Data ruangan berhasil diekspor.")
     } catch (err) {
       console.error(err)

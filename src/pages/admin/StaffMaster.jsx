@@ -45,15 +45,25 @@ export default function StaffMaster() {
     try {
       setSubmitting(true)
       const blob = await adminService.exportStaff()
-      const url = window.URL.createObjectURL(blob)
+      if (blob.type && blob.type.includes("json")) {
+        const text = await blob.text()
+        const json = JSON.parse(text)
+        error(json.message || "Gagal mengekspor data tendik.")
+        return
+      }
+      const url = window.URL.createObjectURL(new Blob([blob], { type: 'text/csv;charset=utf-8;' }))
       const link = document.createElement("a")
       link.href = url
-      link.setAttribute("download", `Data_Tendik_${new Date().getTime()}.csv`)
+      link.setAttribute("download", `Data_Tendik_${new Date().toISOString().slice(0, 10)}.csv`)
       document.body.appendChild(link)
       link.click()
-      link.parentNode.removeChild(link)
-      window.URL.revokeObjectURL(url)
+      setTimeout(() => {
+        if (link.parentNode) link.parentNode.removeChild(link)
+        window.URL.revokeObjectURL(url)
+      }, 500)
+      success("Data Tendik berhasil diekspor.")
     } catch (err) {
+      console.error(err)
       error("Gagal mengekspor data tendik.")
     } finally {
       setSubmitting(false)

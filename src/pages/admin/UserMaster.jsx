@@ -19,7 +19,8 @@ export default function UserMaster() {
     name: '',
     email: '',
     password: '',
-    role: 'dosen'
+    role: 'dosen',
+    attendance_type: 'schedule_based'
   })
 
   const fetchUsers = async () => {
@@ -71,14 +72,15 @@ export default function UserMaster() {
       name: user.name,
       email: user.email,
       password: '',
-      role: user.role
+      role: user.role,
+      attendance_type: user.attendance_type || 'schedule_based'
     })
     setIsModalOpen(true)
   }
 
   const openCreate = () => {
     setEditingUser(null)
-    setFormData({ name: '', email: '', password: '', role: 'dosen' })
+    setFormData({ name: '', email: '', password: '', role: 'dosen', attendance_type: 'schedule_based' })
     setIsModalOpen(true)
   }
 
@@ -115,6 +117,7 @@ export default function UserMaster() {
       case 'admin_akademik': return <Badge variant="outline" className="bg-blue-50 text-blue-600 border-blue-200">Akademik</Badge>
       case 'admin_keuangan': return <Badge variant="outline" className="bg-emerald-50 text-emerald-600 border-emerald-200">Keuangan</Badge>
       case 'dosen': return <Badge variant="outline" className="bg-slate-50 text-slate-600 border-slate-200">Dosen</Badge>
+      case 'tendik': return <Badge variant="outline" className="bg-amber-50 text-amber-600 border-amber-200">Tendik</Badge>
       default: return <Badge>{role}</Badge>
     }
   }
@@ -259,9 +262,22 @@ export default function UserMaster() {
                     className="flex h-10 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-500"
                   >
                     <option value="dosen">Dosen</option>
+                    <option value="tendik">Tenaga Kependidikan (Tendik)</option>
                     <option value="admin_akademik">Admin Akademik</option>
                     <option value="admin_keuangan">Admin Keuangan</option>
                     <option value="super_admin">Super Admin</option>
+                  </select>
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-sm font-medium text-slate-700">Tipe Presensi</label>
+                  <select 
+                    name="attendance_type" 
+                    value={formData.attendance_type} 
+                    onChange={handleChange}
+                    className="flex h-10 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-500"
+                  >
+                    <option value="schedule_based">Sesuai Jadwal Mengajar (Dosen)</option>
+                    <option value="daily_mandatory">Wajib Hadir Setiap Hari Kerja (Tendik / Struktural)</option>
                   </select>
                 </div>
                 <div className="flex gap-3 pt-4">
