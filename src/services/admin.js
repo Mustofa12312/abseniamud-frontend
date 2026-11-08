@@ -142,6 +142,20 @@ export const adminService = {
     return response.data;
   },
 
+  downloadStaffTemplate: async () => {
+    const response = await api.get('/admin/staff/template', { responseType: 'blob' });
+    return response.data;
+  },
+
+  importStaff: async (formData) => {
+    const response = await api.post('/admin/staff/import', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    });
+    return response.data;
+  },
+
   getAvailableLecturers: async () => {
     const response = await api.get('/admin/staff/available-lecturers');
     return response.data;
