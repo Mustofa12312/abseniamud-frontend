@@ -70,6 +70,56 @@ export default function StaffMaster() {
     }
   }
 
+  const handleDownloadTemplate = async () => {
+    try {
+      setSubmitting(true)
+      const blob = await adminService.downloadStaffTemplate()
+      const url = window.URL.createObjectURL(new Blob([blob], { type: 'text/csv;charset=utf-8;' }))
+      const link = document.createElement("a")
+      link.href = url
+      link.setAttribute("download", "Template_Import_Tendik.csv")
+      document.body.appendChild(link)
+      link.click()
+      setTimeout(() => {
+        if (link.parentNode) link.parentNode.removeChild(link)
+        window.URL.revokeObjectURL(url)
+      }, 500)
+      success("Template impor tendik berhasil diunduh.")
+    } catch (err) {
+      console.error(err)
+      error("Gagal mengunduh template.")
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  const handleFileChange = async (e) => {
+    const file = e.target.files[0]
+    if (!file) return
+
+    if (!file.name.match(/\.(csv|xlsx|xls)$/i)) {
+      error("Harap unggah file berformat CSV atau Excel (.xlsx).")
+      return
+    }
+
+    try {
+      setSubmitting(true)
+      const formData = new FormData()
+      formData.append('file', file)
+
+      const res = await adminService.importStaff(formData)
+      if (res.success) {
+        success(res.message)
+        fetchStaff()
+      }
+    } catch (err) {
+      error(err.response?.data?.message || "Gagal mengimpor data tendik.")
+    } finally {
+      setSubmitting(false)
+      if (fileInputRef.current) fileInputRef.current.value = ""
+    }
+  }
+
   const [isFromLecturerModalOpen, setIsFromLecturerModalOpen] = useState(false)
   const [availableLecturers, setAvailableLecturers] = useState([])
   const [selectedLecturerId, setSelectedLecturerId] = useState('')
@@ -209,6 +259,19 @@ export default function StaffMaster() {
             onChange={(e) => setSearchQuery(e.target.value)}
           />
           <div className="flex flex-wrap sm:flex-nowrap gap-2 w-full sm:w-auto justify-end">
+            <input 
+              type="file" 
+              accept=".csv, .xlsx, .xls" 
+              className="hidden" 
+              ref={fileInputRef} 
+              onChange={handleFileChange} 
+            />
+            <Button onClick={handleDownloadTemplate} variant="outline" className="flex-1 sm:flex-none flex items-center justify-center gap-2 border-brand-200 text-brand-700 hover:bg-brand-50" disabled={submitting}>
+              <FileSpreadsheet size={16} /> Template
+            </Button>
+            <Button onClick={() => fileInputRef.current?.click()} variant="outline" className="flex-1 sm:flex-none flex items-center justify-center gap-2 border-emerald-200 text-emerald-700 hover:bg-emerald-50" disabled={submitting}>
+              <Upload size={16} /> Import
+            </Button>
             <Button onClick={handleExportCSV} variant="outline" className="flex-1 sm:flex-none flex items-center justify-center gap-2 border-blue-200 text-blue-700 hover:bg-blue-50" disabled={submitting}>
               <Download size={16} /> Export
             </Button>
