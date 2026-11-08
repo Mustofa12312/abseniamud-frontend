@@ -99,8 +99,8 @@ export default function LecturerMaster() {
     const file = e.target.files[0]
     if (!file) return
 
-    if (!file.name.endsWith('.csv')) {
-      error("Harap unggah file berformat CSV.")
+    if (!file.name.match(/\.(csv|xlsx|xls)$/i)) {
+      error("Harap unggah file berformat CSV atau Excel (.xlsx).")
       return
     }
 
@@ -229,7 +229,7 @@ export default function LecturerMaster() {
           <div className="flex flex-wrap sm:flex-nowrap gap-2 w-full sm:w-auto justify-end">
             <input 
               type="file" 
-              accept=".csv" 
+              accept=".csv, .xlsx, .xls" 
               className="hidden" 
               ref={fileInputRef} 
               onChange={handleFileChange} 
