@@ -8,6 +8,17 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <title>IAIMU Absensi Geofencing</title>
+    <script>
+      (function() {
+        localStorage.removeItem('iaimu-theme');
+        const theme = localStorage.getItem('iaimu-theme-mode');
+        if (theme === 'dark') {
+          document.documentElement.classList.add('dark');
+        } else {
+          document.documentElement.classList.remove('dark');
+        }
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>
