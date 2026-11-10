@@ -15,6 +15,22 @@
   
   --color-accent-500: #f59e0b; /* Amber */
   --color-accent-600: #d97706;
+
+  --color-apple-bg: #F5F5F7;
+  --color-apple-card: #FFFFFF;
+  --color-apple-border: #E8E8ED;
+  --color-apple-subtle: #86868B;
+  --color-apple-text: #1D1D1F;
+  --color-apple-emerald: #10B981;
+  --color-apple-emerald-dark: #059669;
+  --color-apple-emerald-soft: #ECFDF5;
+  --color-apple-blue: #0071E3;
+  --color-apple-amber: #F59E0B;
+  --color-apple-purple: #8B5CF6;
+
+  --shadow-apple-sm: 0 1px 3px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.02);
+  --shadow-apple-card: 0 4px 20px -2px rgba(0, 0, 0, 0.03), 0 2px 6px -1px rgba(0, 0, 0, 0.02);
+  --shadow-apple-hover: 0 8px 30px rgba(0, 0, 0, 0.06);
 }
 
 @layer base {
@@ -61,6 +77,36 @@
   .text-gradient {
     @apply bg-clip-text text-transparent bg-gradient-to-r from-brand-600 to-brand-400 dark:from-brand-400 dark:to-brand-200;
   }
+}
+
+@keyframes growBar {
+  from { height: 0; }
+}
+
+.animate-bar {
+  animation: growBar 0.9s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #D2D2D7;
+  border-radius: 9999px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #86868B;
+}
+
+.dark .custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #334155;
+}
+.dark .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #475569;
 }
 
 /* Print Styles */
