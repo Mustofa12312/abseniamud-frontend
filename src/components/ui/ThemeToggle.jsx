@@ -2,24 +2,24 @@ import { useState, useEffect } from "react"
 import { Moon, Sun } from "lucide-react"
 
 export default function ThemeToggle() {
-  const [isDark, setIsDark] = useState(false)
+  const [isDark, setIsDark] = useState(() => {
+    try {
+      localStorage.removeItem('iaimu-theme')
+      return localStorage.getItem('iaimu-theme-mode') === 'dark'
+    } catch {
+      return false
+    }
+  })
 
   useEffect(() => {
-    // Default wajib ke mode terang (warna terang sesuai referensi)
-    const savedTheme = localStorage.getItem('iaimu-theme-mode')
-    
-    // Bersihkan key lama jika ada
-    localStorage.removeItem('iaimu-theme')
-
-    if (savedTheme === 'dark') {
-      setIsDark(true)
+    if (isDark) {
       document.documentElement.classList.add('dark')
+      localStorage.setItem('iaimu-theme-mode', 'dark')
     } else {
-      setIsDark(false)
       document.documentElement.classList.remove('dark')
       localStorage.setItem('iaimu-theme-mode', 'light')
     }
-  }, [])
+  }, [isDark])
 
   const toggleTheme = () => {
     if (isDark) {
