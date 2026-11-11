@@ -41,14 +41,16 @@ export default function AdminLayout() {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isNotifOpen, setIsNotifOpen] = useState(false);
   const [notifications, setNotifications] = useState([]);
-  const [readSig, setReadSig] = useState(() => localStorage.getItem(getNotifReadKey(user?.id)) || "");
+  const [readState, setReadState] = useState(() => ({
+    key: getNotifReadKey(user?.id),
+    sig: localStorage.getItem(getNotifReadKey(user?.id)) || "",
+  }));
 
   const navigate = useNavigate();
   const location = useLocation();
 
-  useEffect(() => {
-    setReadSig(localStorage.getItem(notifReadKey) || "");
-  }, [notifReadKey]);
+  const readSig =
+    readState.key === notifReadKey ? readState.sig : localStorage.getItem(notifReadKey) || "";
 
   const userRole = resolveUserRole(user);
   const academicAdmin = isAcademicAdmin(user);
@@ -186,7 +188,7 @@ export default function AdminLayout() {
 
   const markAllAsRead = () => {
     localStorage.setItem(notifReadKey, currentNotifSig);
-    setReadSig(currentNotifSig);
+    setReadState({ key: notifReadKey, sig: currentNotifSig });
   };
 
   const allMenuItems = menuGroups.flatMap((g) => g.items);

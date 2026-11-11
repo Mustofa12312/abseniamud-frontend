@@ -4,12 +4,16 @@ import { Card, CardContent } from "../../components/ui/Card";
 import { Badge } from "../../components/ui/Badge";
 import { EmptyState } from "../../components/ui/EmptyState";
 import { PageHeader } from "../../components/ui/PageHeader";
+import { Pagination } from "../../components/ui/Pagination";
 import { attendanceService } from "../../services/attendance";
 
 export default function LecturerHistory() {
   const [history, setHistory] = useState([]);
   const [summary, setSummary] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [meta, setMeta] = useState({ current_page: 1, last_page: 1, per_page: 10, total: 0 });
+  const itemsPerPage = 10;
 
   const now = new Date();
   const [selectedMonth, setSelectedMonth] = useState(now.getMonth() + 1);
@@ -23,14 +27,38 @@ export default function LecturerHistory() {
 
   useEffect(() => {
     let cancelled = false;
-    Promise.all([
-      attendanceService.getHistory(selectedMonth, selectedYear),
-      attendanceService.getSummary(selectedMonth, selectedYear),
-    ])
-      .then(([historyRes, summaryRes]) => {
+    attendanceService
+      .getSummary(selectedMonth, selectedYear)
+      .then((summaryRes) => {
+        if (!cancelled && summaryRes.success) {
+          setSummary(summaryRes.data || null);
+        }
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedMonth, selectedYear]);
+
+  useEffect(() => {
+    let cancelled = false;
+    Promise.resolve().then(() => {
+      if (!cancelled) setLoading(true);
+    });
+    attendanceService
+      .getHistory(selectedMonth, selectedYear, { page: currentPage, per_page: itemsPerPage })
+      .then((historyRes) => {
         if (cancelled) return;
-        if (historyRes.success) setHistory(historyRes.data || []);
-        if (summaryRes.success) setSummary(summaryRes.data || null);
+        if (historyRes.success) {
+          const list = historyRes.data || [];
+          setHistory(list);
+          setMeta({
+            current_page: historyRes.meta?.current_page ?? currentPage,
+            last_page: historyRes.meta?.last_page ?? 1,
+            per_page: historyRes.meta?.per_page ?? itemsPerPage,
+            total: historyRes.meta?.total ?? list.length,
+          });
+        }
       })
       .catch(() => {})
       .finally(() => {
@@ -39,7 +67,7 @@ export default function LecturerHistory() {
     return () => {
       cancelled = true;
     };
-  }, [selectedMonth, selectedYear]);
+  }, [selectedMonth, selectedYear, currentPage]);
 
   const getStatusVariant = (status) => {
     switch (status) {
@@ -65,6 +93,7 @@ export default function LecturerHistory() {
               value={selectedMonth}
               onChange={(e) => {
                 setLoading(true);
+                setCurrentPage(1);
                 setSelectedMonth(Number(e.target.value));
               }}
               className="h-9 px-3 rounded-xl border border-[#E5E5EA] dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-medium"
@@ -79,6 +108,7 @@ export default function LecturerHistory() {
               value={selectedYear}
               onChange={(e) => {
                 setLoading(true);
+                setCurrentPage(1);
                 setSelectedYear(Number(e.target.value));
               }}
               className="h-9 px-3 rounded-xl border border-[#E5E5EA] dark:border-slate-700 bg-white dark:bg-slate-800 text-xs font-medium"
@@ -182,6 +212,20 @@ export default function LecturerHistory() {
               );
             })}
           </div>
+        )}
+
+        {!loading && meta.last_page > 1 && (
+          <Card className="overflow-hidden">
+            <Pagination
+              currentPage={meta.current_page}
+              lastPage={meta.last_page}
+              total={meta.total}
+              from={meta.total > 0 ? (meta.current_page - 1) * meta.per_page + 1 : 0}
+              to={Math.min(meta.current_page * meta.per_page, meta.total)}
+              onPageChange={setCurrentPage}
+              itemLabel="riwayat"
+            />
+          </Card>
         )}
       </div>
     </div>

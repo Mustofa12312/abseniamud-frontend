@@ -6,6 +6,7 @@ import { Input } from "../../components/ui/Input";
 import { Badge } from "../../components/ui/Badge";
 import { EmptyState } from "../../components/ui/EmptyState";
 import { PageHeader } from "../../components/ui/PageHeader";
+import { Pagination } from "../../components/ui/Pagination";
 import { attendanceService } from "../../services/attendance";
 import { useToast } from "../../contexts/ToastContext";
 
@@ -14,6 +15,9 @@ export default function LecturerCorrection() {
   const [corrections, setCorrections] = useState([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [meta, setMeta] = useState({ current_page: 1, last_page: 1, per_page: 10, total: 0 });
+  const itemsPerPage = 10;
   const [formData, setFormData] = useState({
     date: "",
     type: "Lupa Check-in",
@@ -21,17 +25,25 @@ export default function LecturerCorrection() {
   });
 
   const fetchCorrections = useCallback(async () => {
+    setLoading(true);
     try {
-      const res = await attendanceService.getCorrections();
+      const res = await attendanceService.getCorrections({ page: currentPage, per_page: itemsPerPage });
       if (res.success) {
-        setCorrections(res.data || []);
+        const list = res.data || [];
+        setCorrections(list);
+        setMeta({
+          current_page: res.meta?.current_page ?? currentPage,
+          last_page: res.meta?.last_page ?? 1,
+          per_page: res.meta?.per_page ?? itemsPerPage,
+          total: res.meta?.total ?? list.length,
+        });
       }
     } catch {
       // ignore initial error
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [currentPage]);
 
   useEffect(() => {
     let active = true;
@@ -53,7 +65,11 @@ export default function LecturerCorrection() {
       if (res.success) {
         success(res.message || "Pengajuan koreksi berhasil dikirim.");
         setFormData({ date: "", type: "Lupa Check-in", reason: "" });
-        fetchCorrections();
+        if (currentPage !== 1) {
+          setCurrentPage(1);
+        } else {
+          fetchCorrections();
+        }
       }
     } catch (err) {
       error(err.response?.data?.message || "Gagal mengirim pengajuan koreksi.");
@@ -135,36 +151,47 @@ export default function LecturerCorrection() {
         <Card className="md:col-span-2 overflow-hidden">
           <CardHeader className="pb-4 border-b border-[#F2F2F7] dark:border-slate-700/60 flex flex-row items-center justify-between space-y-0">
             <CardTitle className="text-base">Riwayat Pengajuan Anda</CardTitle>
-            <Badge>{corrections.length} Total</Badge>
+            <Badge>{meta.total} Total</Badge>
           </CardHeader>
           <CardContent className="p-0 sm:p-0">
             {loading ? (
               <div className="p-8 text-center text-sm text-[#86868B] animate-pulse">Memuat riwayat...</div>
             ) : corrections.length > 0 ? (
-              <div className="divide-y divide-[#F2F2F7] dark:divide-slate-700/50">
-                {corrections.map((item) => (
-                  <div
-                    key={item.id}
-                    className="p-4 sm:px-5 hover:bg-[#F9F9FB] dark:hover:bg-slate-700/25 transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-3"
-                  >
-                    <div className="space-y-1.5">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <CalendarIcon size={14} className="text-emerald-600" />
-                        <span className="font-semibold text-sm">{item.date}</span>
-                        <span className="text-[#D2D2D7]">•</span>
-                        <span className="text-xs font-medium text-[#86868B] dark:text-slate-400">{item.type}</span>
+              <>
+                <div className="divide-y divide-[#F2F2F7] dark:divide-slate-700/50">
+                  {corrections.map((item) => (
+                    <div
+                      key={item.id}
+                      className="p-4 sm:px-5 hover:bg-[#F9F9FB] dark:hover:bg-slate-700/25 transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+                    >
+                      <div className="space-y-1.5">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <CalendarIcon size={14} className="text-emerald-600" />
+                          <span className="font-semibold text-sm">{item.date}</span>
+                          <span className="text-[#D2D2D7]">•</span>
+                          <span className="text-xs font-medium text-[#86868B] dark:text-slate-400">{item.type}</span>
+                        </div>
+                        <p className="text-xs sm:text-sm text-[#86868B] dark:text-slate-300 pl-3 border-l-2 border-[#E5E5EA] dark:border-slate-700 italic">
+                          "{item.reason}"
+                        </p>
+                        <p className="text-[11px] text-[#86868B] flex items-center gap-1">
+                          <Clock size={11} /> Diajukan: {item.created_at}
+                        </p>
                       </div>
-                      <p className="text-xs sm:text-sm text-[#86868B] dark:text-slate-300 pl-3 border-l-2 border-[#E5E5EA] dark:border-slate-700 italic">
-                        "{item.reason}"
-                      </p>
-                      <p className="text-[11px] text-[#86868B] flex items-center gap-1">
-                        <Clock size={11} /> Diajukan: {item.created_at}
-                      </p>
+                      <div className="shrink-0">{renderStatusBadge(item.status)}</div>
                     </div>
-                    <div className="shrink-0">{renderStatusBadge(item.status)}</div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+                <Pagination
+                  currentPage={meta.current_page}
+                  lastPage={meta.last_page}
+                  total={meta.total}
+                  from={meta.total > 0 ? (meta.current_page - 1) * meta.per_page + 1 : 0}
+                  to={Math.min(meta.current_page * meta.per_page, meta.total)}
+                  onPageChange={setCurrentPage}
+                  itemLabel="pengajuan"
+                />
+              </>
             ) : (
               <EmptyState
                 icon={FileText}

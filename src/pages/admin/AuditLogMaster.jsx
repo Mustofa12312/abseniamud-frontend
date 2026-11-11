@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import { ShieldCheck, Clock, Activity, User, Monitor, Search } from "lucide-react";
 import { Card } from "../../components/ui/Card";
 import { Badge } from "../../components/ui/Badge";
@@ -12,17 +12,48 @@ export default function AuditLogMaster() {
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [actionFilter, setActionFilter] = useState("ALL");
   const [currentPage, setCurrentPage] = useState(1);
+  const [meta, setMeta] = useState({ current_page: 1, last_page: 1, per_page: 15, total: 0 });
   const itemsPerPage = 15;
 
   useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchQuery.trim());
+    }, 250);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  useEffect(() => {
     let cancelled = false;
+    Promise.resolve().then(() => {
+      if (!cancelled) setLoading(true);
+    });
+
+    const params = {
+      page: currentPage,
+      per_page: itemsPerPage,
+    };
+    if (actionFilter !== "ALL") {
+      params.action = actionFilter;
+    }
+    if (debouncedSearch) {
+      params.search = debouncedSearch;
+    }
+
     adminService
-      .getAuditLogs()
+      .getAuditLogs(params)
       .then((res) => {
         if (!cancelled && res.success) {
-          setLogs(res.data || []);
+          const list = res.data || [];
+          setLogs(list);
+          setMeta({
+            current_page: res.meta?.current_page ?? currentPage,
+            last_page: res.meta?.last_page ?? 1,
+            per_page: res.meta?.per_page ?? itemsPerPage,
+            total: res.meta?.total ?? list.length,
+          });
         }
       })
       .catch(() => {})
@@ -32,7 +63,7 @@ export default function AuditLogMaster() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [currentPage, actionFilter, debouncedSearch]);
 
   const getActionVariant = (action = "") => {
     if (action.includes("APPROVE") || action.includes("CREATE")) return "success";
@@ -40,23 +71,6 @@ export default function AuditLogMaster() {
     if (action.includes("UPDATE") || action.includes("RESET")) return "warning";
     return "info";
   };
-
-  const filteredLogs = useMemo(() => {
-    const q = searchQuery.trim().toLowerCase();
-    return logs.filter((log) => {
-      const matchSearch =
-        !q ||
-        log.admin_name?.toLowerCase().includes(q) ||
-        log.action?.toLowerCase().includes(q) ||
-        log.target?.toLowerCase().includes(q);
-      const matchAction = actionFilter === "ALL" || log.action?.includes(actionFilter);
-      return matchSearch && matchAction;
-    });
-  }, [logs, searchQuery, actionFilter]);
-
-  const totalPages = Math.max(1, Math.ceil(filteredLogs.length / itemsPerPage));
-  const safePage = Math.min(currentPage, totalPages);
-  const paginatedLogs = filteredLogs.slice((safePage - 1) * itemsPerPage, safePage * itemsPerPage);
 
   return (
     <div className="space-y-6">
@@ -112,12 +126,12 @@ export default function AuditLogMaster() {
           <span className="flex items-center gap-2 text-sm font-semibold">
             <Activity size={16} className="text-emerald-600" /> Riwayat Aktivitas
           </span>
-          <Badge>{filteredLogs.length} Data</Badge>
+          <Badge>{meta.total} Data</Badge>
         </div>
 
         {loading ? (
           <div className="p-12 text-center text-sm text-[#86868B] animate-pulse">Menarik rekam jejak sistem...</div>
-        ) : filteredLogs.length === 0 ? (
+        ) : logs.length === 0 ? (
           <EmptyState
             icon={ShieldCheck}
             title="Log Kosong"
@@ -126,7 +140,7 @@ export default function AuditLogMaster() {
         ) : (
           <>
             <div className="divide-y divide-[#F2F2F7] dark:divide-slate-700/50">
-              {paginatedLogs.map((log) => {
+              {logs.map((log) => {
                 const [datePart, timePart] = String(log.created_at || "").split(" ");
                 return (
                   <div
@@ -173,11 +187,11 @@ export default function AuditLogMaster() {
               })}
             </div>
             <Pagination
-              currentPage={safePage}
-              lastPage={totalPages}
-              total={filteredLogs.length}
-              from={(safePage - 1) * itemsPerPage + 1}
-              to={Math.min(safePage * itemsPerPage, filteredLogs.length)}
+              currentPage={meta.current_page}
+              lastPage={meta.last_page}
+              total={meta.total}
+              from={meta.total > 0 ? (meta.current_page - 1) * meta.per_page + 1 : 0}
+              to={Math.min(meta.current_page * meta.per_page, meta.total)}
               onPageChange={setCurrentPage}
               itemLabel="log"
             />
