@@ -4,6 +4,7 @@ import {
 } from "lucide-react"
 import api from "../../services/api"
 import { useToast } from "../../contexts/ToastContext"
+import { resolveLeaveDocument } from "../../utils/format"
 
 export default function AdminLeaves() {
   const [leaves, setLeaves] = useState([])
@@ -233,16 +234,27 @@ export default function AdminLeaves() {
                         <div className="text-[13px] truncate" title={item.reason}>
                           {item.reason || '-'}
                         </div>
-                        {item.document_path && (
-                          <a
-                            href={item.document_path.startsWith('http') ? item.document_path : `/storage/${item.document_path}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-700 dark:text-emerald-400 hover:underline bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200/60 dark:border-emerald-800/40 px-2 py-0.5 rounded-md mt-1 transition-colors"
-                          >
-                            <FileText className="w-3 h-3" /> Lampiran
-                          </a>
-                        )}
+                        {(() => {
+                          const doc = resolveLeaveDocument(item.document_path, import.meta.env.VITE_API_URL);
+                          if (!doc) return null;
+                          if (doc.type === 'url') {
+                            return (
+                              <a
+                                href={doc.href}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-700 dark:text-emerald-400 hover:underline bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200/60 dark:border-emerald-800/40 px-2 py-0.5 rounded-md mt-1 transition-colors"
+                              >
+                                <FileText className="w-3 h-3" /> {doc.label}
+                              </a>
+                            );
+                          }
+                          return (
+                            <span className="inline-flex items-center gap-1 text-[11px] font-medium text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700 px-2 py-0.5 rounded-md mt-1">
+                              <FileText className="w-3 h-3 text-slate-500" /> Ref: {doc.text}
+                            </span>
+                          );
+                        })()}
                         {item.admin_notes && (
                           <div className="text-[11px] text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 border border-amber-200/60 dark:border-amber-800/40 px-2 py-0.5 rounded-md mt-1 inline-block">
                             <span className="font-semibold">Catatan:</span> {item.admin_notes}

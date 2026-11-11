@@ -1,163 +1,122 @@
-import { useState } from "react"
-import { useNavigate } from "react-router-dom"
-import { Mail, Lock, LogIn, AlertCircle } from "lucide-react"
-import { motion } from "framer-motion"
-import { Button } from "../../components/ui/Button"
-import { Input } from "../../components/ui/Input"
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../../components/ui/Card"
-import { useAuth } from "../../contexts/AuthContext"
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { Mail, Lock, LogIn, AlertCircle } from "lucide-react";
+import { motion } from "framer-motion";
+import { Button } from "../../components/ui/Button";
+import { Input } from "../../components/ui/Input";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../../components/ui/Card";
+import { useAuth } from "../../contexts/AuthContext";
+import { getDefaultRouteForUser } from "../../utils/rbac";
 
 export default function Login() {
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
-  const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState("")
-  const navigate = useNavigate()
-  const { login } = useAuth()
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
+  const navigate = useNavigate();
+  const { login } = useAuth();
 
   const handleLogin = async (e) => {
-    e.preventDefault()
-    setIsLoading(true)
-    setError("")
+    e.preventDefault();
+    setIsLoading(true);
+    setError("");
 
     try {
-      const response = await login(email, password)
-      
-      if (response.success) {
-        // Arahkan berdasarkan role (contoh 1: super_admin, 2: dosen)
-        const roleName = response.data.user.role;
-        const roleId = parseInt(response.data.user.role_id, 10);
-        
-        if (roleName === 'super_admin' || roleName === 'admin_akademik' || roleId === 1) {
-          navigate("/admin")
-        } else {
-          navigate("/lecturer")
-        }
+      const response = await login(email, password);
+      if (response.success && response.data?.user) {
+        navigate(getDefaultRouteForUser(response.data.user));
       }
     } catch (err) {
-      if (err.response && err.response.data && err.response.data.errors) {
-        // Validation errors
-        const firstError = Object.values(err.response.data.errors)[0][0]
-        setError(firstError)
-      } else if (err.response && err.response.data && err.response.data.message) {
-        setError(err.response.data.message)
+      if (err.response?.data?.errors) {
+        const firstError = Object.values(err.response.data.errors)[0]?.[0];
+        setError(firstError || "Data masuk tidak valid.");
+      } else if (err.response?.data?.message) {
+        setError(err.response.data.message);
       } else {
-        setError("Koneksi ke server gagal.")
+        setError("Koneksi ke server gagal.");
       }
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
+      initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5 }}
+      transition={{ duration: 0.4 }}
       className="w-full"
     >
-      <div className="text-center mb-8">
-        <motion.div 
-          initial={{ scale: 0.9, opacity: 0 }}
+      <div className="text-center mb-7">
+        <motion.div
+          initial={{ scale: 0.94, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
-          transition={{ delay: 0.2, duration: 0.5 }}
-          className="w-auto mx-auto inline-flex items-center justify-center mb-4"
+          transition={{ delay: 0.1, duration: 0.4 }}
+          className="mx-auto inline-flex items-center justify-center mb-4 p-3 rounded-3xl bg-white dark:bg-slate-900 border border-[#E5E5EA] dark:border-slate-800 shadow-[0_6px_24px_rgb(0,0,0,0.06)]"
         >
-          <img src="/iaimulogo.png" alt="Logo IAIMU" className="h-28 w-auto object-contain drop-shadow-md" />
+          <img src="/iaimulogo.png" alt="Logo IAIMU" className="h-20 w-auto object-contain" />
         </motion.div>
-        <motion.h1 
-          initial={{ y: 10, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.3 }}
-          className="text-3xl font-bold text-white mb-2 tracking-tight"
-        >
+        <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-[#1D1D1F] dark:text-white mb-1.5">
           Selamat Datang
-        </motion.h1>
-        <motion.p 
-          initial={{ y: 10, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.4 }}
-          className="text-brand-100"
-        >
-          Sistem Presensi Geofencing
-        </motion.p>
+        </h1>
+        <p className="text-sm text-[#86868B] dark:text-slate-400">
+          Sistem Presensi Geofencing IAIMU
+        </p>
       </div>
 
-      <motion.div
-        initial={{ y: 20, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ delay: 0.5, duration: 0.5 }}
-      >
-        <Card className="border-0 shadow-2xl bg-white/95 backdrop-blur-md relative overflow-hidden">
-          <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-brand-400 to-teal-400"></div>
-          <CardHeader className="space-y-1 pb-4">
-            <CardTitle className="text-2xl text-slate-800">Masuk Akun</CardTitle>
-            <CardDescription className="text-slate-500">
-              Silakan masukkan email dan password Anda
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {error && (
-              <div className="mb-4 p-3 rounded-lg bg-red-50 text-red-600 text-sm flex items-start gap-2">
-                <AlertCircle size={16} className="mt-0.5 shrink-0" />
-                <p>{error}</p>
-              </div>
-            )}
-            
-            <form onSubmit={handleLogin} className="space-y-4">
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-slate-700">Email atau NIDN</label>
-                <Input
-                  type="text"
-                  placeholder="ahmad@iaimu.ac.id"
-                  icon={Mail}
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-slate-700">Password</label>
-                <Input
-                  type="password"
-                  placeholder="••••••••"
-                  icon={Lock}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                />
-              </div>
-              
-              <Button 
-                type="submit" 
-                className="w-full mt-2" 
-                size="lg"
-                disabled={isLoading}
-              >
-                {isLoading ? (
-                  <div className="flex items-center gap-2">
-                    <div className="w-5 h-5 rounded-full border-2 border-white/30 border-t-white animate-spin"></div>
-                    Memproses...
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-2">
-                    <LogIn size={18} /> Masuk
-                  </div>
-                )}
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
-      </motion.div>
+      <Card className="relative overflow-hidden shadow-[0_12px_36px_rgb(0,0,0,0.06)] dark:shadow-none">
+        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-emerald-500 to-teal-500" />
+        <CardHeader className="space-y-1 pb-4 pt-7">
+          <CardTitle className="text-xl font-semibold">Masuk Akun</CardTitle>
+          <CardDescription>Silakan masukkan email dan kata sandi Anda</CardDescription>
+        </CardHeader>
+        <CardContent className="pb-7">
+          {error && (
+            <div className="mb-4 p-3 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200/80 dark:border-red-800/60 text-red-700 dark:text-red-400 text-xs sm:text-sm flex items-start gap-2">
+              <AlertCircle size={16} className="mt-0.5 shrink-0" />
+              <p>{error}</p>
+            </div>
+          )}
 
-      <motion.p 
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.8 }}
-        className="text-center mt-8 text-brand-200/60 text-sm"
-      >
-        &copy; 2026 Institut Agama Islam Miftahul Ulum
-      </motion.p>
+          <form onSubmit={handleLogin} className="space-y-4">
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-[#1D1D1F] dark:text-slate-200">
+                Email / Identitas Akun
+              </label>
+              <Input
+                type="text"
+                placeholder="nama@iaimu.ac.id"
+                icon={Mail}
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+              />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-[#1D1D1F] dark:text-slate-200">
+                Kata Sandi
+              </label>
+              <Input
+                type="password"
+                placeholder="••••••••"
+                icon={Lock}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+              />
+            </div>
+
+            <Button type="submit" className="w-full mt-2" size="lg" isLoading={isLoading}>
+              {!isLoading && <LogIn size={17} />}
+              {isLoading ? "Memproses..." : "Masuk"}
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
+
+      <p className="text-center mt-7 text-[#86868B] dark:text-slate-500 text-xs">
+        &copy; {new Date().getFullYear()} Institut Agama Islam Miftahul Ulum
+      </p>
     </motion.div>
-  )
+  );
 }

@@ -1,106 +1,104 @@
-import { useState, useEffect } from "react"
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../../components/ui/Card"
-import { Button } from "../../components/ui/Button"
-import { Input } from "../../components/ui/Input"
-import { Badge } from "../../components/ui/Badge"
-import { Calendar as CalendarIcon, Clock, Send, FileText } from "lucide-react"
-import { attendanceService } from "../../services/attendance"
-import { useToast } from "../../contexts/ToastContext"
-import { EmptyState } from "../../components/ui/EmptyState"
+import { useState, useEffect, useCallback } from "react";
+import { Calendar as CalendarIcon, Clock, Send, FileText } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/Card";
+import { Button } from "../../components/ui/Button";
+import { Input } from "../../components/ui/Input";
+import { Badge } from "../../components/ui/Badge";
+import { EmptyState } from "../../components/ui/EmptyState";
+import { PageHeader } from "../../components/ui/PageHeader";
+import { attendanceService } from "../../services/attendance";
+import { useToast } from "../../contexts/ToastContext";
 
 export default function LecturerCorrection() {
-  const { success, error } = useToast()
-  const [corrections, setCorrections] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [submitting, setSubmitting] = useState(false)
+  const { success, error } = useToast();
+  const [corrections, setCorrections] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
   const [formData, setFormData] = useState({
-    date: '',
-    type: 'Lupa Check-in',
-    reason: ''
-  })
+    date: "",
+    type: "Lupa Check-in",
+    reason: "",
+  });
 
-  const fetchCorrections = async () => {
+  const fetchCorrections = useCallback(async () => {
     try {
-      const res = await attendanceService.getCorrections()
+      const res = await attendanceService.getCorrections();
       if (res.success) {
-        setCorrections(res.data)
+        setCorrections(res.data || []);
       }
-    } catch (err) {
-      console.error(err)
+    } catch {
+      // ignore initial error
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  }, []);
 
   useEffect(() => {
-    fetchCorrections()
-  }, [])
+    fetchCorrections();
+  }, [fetchCorrections]);
 
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value })
-  }
+    setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+  };
 
   const handleSubmit = async (e) => {
-    e.preventDefault()
-    setSubmitting(true)
+    e.preventDefault();
+    setSubmitting(true);
     try {
-      const res = await attendanceService.submitCorrection(formData)
+      const res = await attendanceService.submitCorrection(formData);
       if (res.success) {
-        success(res.message || "Pengajuan koreksi berhasil dikirim.")
-        setFormData({ date: '', type: 'Lupa Check-in', reason: '' })
-        fetchCorrections()
+        success(res.message || "Pengajuan koreksi berhasil dikirim.");
+        setFormData({ date: "", type: "Lupa Check-in", reason: "" });
+        fetchCorrections();
       }
     } catch (err) {
-      error(err.response?.data?.message || 'Terjadi kesalahan')
+      error(err.response?.data?.message || "Gagal mengirim pengajuan koreksi.");
     } finally {
-      setSubmitting(false)
+      setSubmitting(false);
     }
-  }
+  };
 
-  const getStatusBadge = (status) => {
-    switch(status) {
-      case 'PENDING': return <Badge variant="outline" className="bg-amber-50 text-amber-600 border-amber-200">Menunggu</Badge>
-      case 'APPROVED': return <Badge variant="outline" className="bg-emerald-50 text-emerald-600 border-emerald-200">Disetujui</Badge>
-      case 'REJECTED': return <Badge variant="outline" className="bg-rose-50 text-rose-600 border-rose-200">Ditolak</Badge>
-      default: return null
+  const renderStatusBadge = (status) => {
+    switch (String(status).toUpperCase()) {
+      case "PENDING":
+        return <Badge variant="warning">Menunggu</Badge>;
+      case "APPROVED":
+        return <Badge variant="success">Disetujui</Badge>;
+      case "REJECTED":
+        return <Badge variant="danger">Ditolak</Badge>;
+      default:
+        return <Badge>{status}</Badge>;
     }
-  }
+  };
 
   return (
-    <div className="space-y-6 pb-24 lg:pb-10 max-w-4xl mx-auto">
-      <div>
-        <h2 className="text-2xl font-bold tracking-tight text-slate-800">Koreksi Presensi</h2>
-        <p className="text-slate-500 mt-1">Ajukan pembenaran absensi jika Anda lupa atau terkendala sistem.</p>
-      </div>
+    <div className="space-y-6">
+      <PageHeader
+        title="Koreksi Presensi"
+        description="Ajukan pembenaran absensi apabila terkendala lupa check-in/out atau masalah perangkat."
+      />
 
-      <div className="grid gap-6 md:grid-cols-3">
-        {/* Form Pengajuan */}
-        <Card className="md:col-span-1 border-none shadow-sm h-fit">
-          <CardHeader className="bg-slate-50/50 pb-4 border-b border-slate-100">
-            <CardTitle className="text-lg flex items-center gap-2">
-              <FileText size={18} className="text-brand-600"/> Form Pengajuan
+      <div className="grid gap-6 md:grid-cols-3 items-start">
+        <Card className="md:col-span-1">
+          <CardHeader className="pb-4 border-b border-[#F2F2F7] dark:border-slate-700/60">
+            <CardTitle className="text-base flex items-center gap-2">
+              <FileText size={17} className="text-emerald-600" /> Form Pengajuan
             </CardTitle>
           </CardHeader>
-          <CardContent className="pt-4">
+          <CardContent className="pt-5">
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-1.5">
-                <label className="text-sm font-medium text-slate-700">Tanggal</label>
-                <Input 
-                  type="date" 
-                  name="date" 
-                  value={formData.date}
-                  onChange={handleChange}
-                  required
-                />
+                <label className="text-xs font-semibold">Tanggal</label>
+                <Input type="date" name="date" value={formData.date} onChange={handleChange} required />
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-sm font-medium text-slate-700">Jenis Kendala</label>
-                <select 
-                  name="type" 
+                <label className="text-xs font-semibold">Jenis Kendala</label>
+                <select
+                  name="type"
                   value={formData.type}
                   onChange={handleChange}
-                  className="flex h-10 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 shadow-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500"
+                  className="flex h-10 sm:h-11 w-full rounded-xl border border-[#E5E5EA] dark:border-slate-700/70 bg-white dark:bg-slate-900/70 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/35"
                 >
                   <option value="Lupa Check-in">Lupa Check-in</option>
                   <option value="Lupa Check-out">Lupa Check-out</option>
@@ -110,71 +108,69 @@ export default function LecturerCorrection() {
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-sm font-medium text-slate-700">Alasan / Keterangan</label>
-                <textarea 
-                  name="reason" 
+                <label className="text-xs font-semibold">Alasan / Keterangan</label>
+                <textarea
+                  name="reason"
                   value={formData.reason}
                   onChange={handleChange}
-                  rows="3"
-                  className="flex w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 shadow-sm focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500"
+                  rows={3}
+                  className="flex w-full rounded-xl border border-[#E5E5EA] dark:border-slate-700/70 bg-white dark:bg-slate-900/70 px-3.5 py-2.5 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-emerald-500/35"
                   placeholder="Jelaskan alasan pengajuan secara singkat..."
                   required
-                ></textarea>
+                />
               </div>
 
-              <Button type="submit" disabled={submitting} className="w-full flex items-center justify-center gap-2">
-                {submitting ? 'Mengirim...' : <><Send size={16}/> Ajukan Koreksi</>}
+              <Button type="submit" isLoading={submitting} className="w-full">
+                {!submitting && <Send size={15} />}
+                {submitting ? "Mengirim..." : "Ajukan Koreksi"}
               </Button>
             </form>
           </CardContent>
         </Card>
 
-        {/* Riwayat Pengajuan */}
-        <Card className="md:col-span-2 border-none shadow-sm">
-          <CardHeader className="bg-slate-50/50 pb-4 border-b border-slate-100">
-            <CardTitle className="text-lg flex justify-between items-center">
-              Riwayat Pengajuan Anda
-              <Badge variant="outline" className="bg-white">{corrections.length} Total</Badge>
-            </CardTitle>
+        <Card className="md:col-span-2 overflow-hidden">
+          <CardHeader className="pb-4 border-b border-[#F2F2F7] dark:border-slate-700/60 flex flex-row items-center justify-between space-y-0">
+            <CardTitle className="text-base">Riwayat Pengajuan Anda</CardTitle>
+            <Badge>{corrections.length} Total</Badge>
           </CardHeader>
-          <CardContent className="p-0">
+          <CardContent className="p-0 sm:p-0">
             {loading ? (
-              <div className="p-8 text-center text-slate-500 animate-pulse">Memuat riwayat...</div>
+              <div className="p-8 text-center text-sm text-[#86868B] animate-pulse">Memuat riwayat...</div>
             ) : corrections.length > 0 ? (
-              <div className="divide-y divide-slate-100">
+              <div className="divide-y divide-[#F2F2F7] dark:divide-slate-700/50">
                 {corrections.map((item) => (
-                  <div key={item.id} className="p-4 hover:bg-slate-50 transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2">
-                        <CalendarIcon size={14} className="text-brand-600"/>
-                        <span className="font-medium text-slate-700">{item.date}</span>
-                        <span className="text-slate-300">•</span>
-                        <span className="text-sm text-slate-600">{item.type}</span>
+                  <div
+                    key={item.id}
+                    className="p-4 sm:px-5 hover:bg-[#F9F9FB] dark:hover:bg-slate-700/25 transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+                  >
+                    <div className="space-y-1.5">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <CalendarIcon size={14} className="text-emerald-600" />
+                        <span className="font-semibold text-sm">{item.date}</span>
+                        <span className="text-[#D2D2D7]">•</span>
+                        <span className="text-xs font-medium text-[#86868B] dark:text-slate-400">{item.type}</span>
                       </div>
-                      <p className="text-sm text-slate-500 pl-6 border-l-2 border-slate-100 ml-1 mt-2 mb-1 italic">
+                      <p className="text-xs sm:text-sm text-[#86868B] dark:text-slate-300 pl-3 border-l-2 border-[#E5E5EA] dark:border-slate-700 italic">
                         "{item.reason}"
                       </p>
-                      <p className="text-xs text-slate-400 pl-6 ml-1 flex items-center gap-1 mt-2">
-                        <Clock size={12}/> Diajukan pada {item.created_at}
+                      <p className="text-[11px] text-[#86868B] flex items-center gap-1">
+                        <Clock size={11} /> Diajukan: {item.created_at}
                       </p>
                     </div>
-                    <div className="flex sm:justify-end sm:shrink-0">
-                      {getStatusBadge(item.status)}
-                    </div>
+                    <div className="shrink-0">{renderStatusBadge(item.status)}</div>
                   </div>
                 ))}
               </div>
             ) : (
-              <div className="h-48 flex items-center justify-center">
-                <EmptyState 
-                  title="Belum Ada Riwayat" 
-                  description="Belum ada riwayat pengajuan koreksi yang Anda buat." 
-                />
-              </div>
+              <EmptyState
+                icon={FileText}
+                title="Belum Ada Riwayat"
+                description="Belum ada riwayat pengajuan koreksi yang Anda buat."
+              />
             )}
           </CardContent>
         </Card>
       </div>
     </div>
-  )
+  );
 }
