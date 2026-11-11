@@ -21,3 +21,4 @@ export function PageHeader({ title, description, actions, badge, className }) {
     </div>
   );
 }
+

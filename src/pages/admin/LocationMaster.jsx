@@ -57,7 +57,11 @@ export default function LocationMaster() {
   }, [error]);
 
   useEffect(() => {
-    fetchLocations();
+    let active = true;
+    Promise.resolve().then(() => {
+      if (active) fetchLocations();
+    });
+    return () => { active = false; };
   }, [fetchLocations]);
 
   const handleOpenCreate = () => {

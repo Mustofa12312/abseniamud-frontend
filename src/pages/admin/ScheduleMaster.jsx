@@ -89,7 +89,11 @@ export default function ScheduleMaster() {
   }, [error]);
 
   useEffect(() => {
-    fetchData();
+    let active = true;
+    Promise.resolve().then(() => {
+      if (active) fetchData();
+    });
+    return () => { active = false; };
   }, [fetchData]);
 
   useEffect(() => {

@@ -66,8 +66,13 @@ export default function AcademicYearMaster() {
   }, [error])
 
   useEffect(() => {
-    fetchAcademicYears()
-    fetchHolidays()
+    let active = true
+    Promise.resolve().then(() => {
+      if (!active) return
+      fetchAcademicYears()
+      fetchHolidays()
+    })
+    return () => { active = false }
   }, [fetchAcademicYears, fetchHolidays])
 
   const handleOpenCreateHoliday = () => {

@@ -48,8 +48,11 @@ export default function Monitoring() {
 
   // Initial and date change fetch
   useEffect(() => {
-    fetchAttendance(selectedDate)
-    setCountdown(15)
+    let active = true
+    Promise.resolve().then(() => {
+      if (active) fetchAttendance(selectedDate)
+    })
+    return () => { active = false }
   }, [selectedDate, fetchAttendance])
 
   // Smart Auto-Sync Timer (15s)
@@ -92,11 +95,6 @@ export default function Monitoring() {
     }
     return matchesSearch && matchesStatus
   })
-
-  // Reset page when filter or search changes
-  useEffect(() => {
-    setCurrentPage(1)
-  }, [searchQuery, statusFilter])
 
   const totalPages = Math.max(1, Math.ceil(filteredData.length / itemsPerPage))
   const paginatedData = filteredData.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
@@ -197,7 +195,7 @@ export default function Monitoring() {
 
           {/* Manual Refresh Button */}
           <button
-            onClick={() => fetchAttendance(selectedDate, false)}
+            onClick={() => { setCountdown(15); fetchAttendance(selectedDate, false); }}
             disabled={loading || isRefreshing}
             className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white dark:bg-slate-800 hover:bg-neutral-50 dark:hover:bg-slate-750 active:scale-[0.98] text-[#1D1D1F] dark:text-slate-200 border border-[#E5E5EA] dark:border-slate-700 rounded-xl text-xs font-medium shadow-apple-sm transition-all cursor-pointer disabled:opacity-60"
           >
@@ -209,7 +207,7 @@ export default function Monitoring() {
           <input
             type="date"
             value={selectedDate}
-            onChange={(e) => setSelectedDate(e.target.value)}
+            onChange={(e) => { setSelectedDate(e.target.value); setCountdown(15); setCurrentPage(1); }}
             max={today}
             className="h-9 px-3 border border-[#E5E5EA] dark:border-slate-700 rounded-xl text-xs bg-white dark:bg-slate-800 text-[#1D1D1F] dark:text-white shadow-apple-sm focus:ring-2 focus:ring-emerald-500/20 focus:outline-none transition-all"
           />
@@ -293,7 +291,7 @@ export default function Monitoring() {
             placeholder="Cari nama dosen / tendik..."
             type="text"
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
           />
         </div>
 
@@ -304,7 +302,7 @@ export default function Monitoring() {
             return (
               <button
                 key={s}
-                onClick={() => setStatusFilter(s)}
+                onClick={() => { setStatusFilter(s); setCurrentPage(1); }}
                 className={`px-3.5 py-1.5 text-xs rounded-full transition-all cursor-pointer whitespace-nowrap ${
                   isActive
                     ? 'font-semibold bg-emerald-600 text-white shadow-apple-sm hover:bg-emerald-700'

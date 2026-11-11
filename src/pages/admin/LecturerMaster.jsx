@@ -50,7 +50,11 @@ export default function LecturerMaster() {
   }, [error]);
 
   useEffect(() => {
-    fetchLecturers();
+    let active = true;
+    Promise.resolve().then(() => {
+      if (active) fetchLecturers();
+    });
+    return () => { active = false; };
   }, [fetchLecturers]);
 
   const handleExportCSV = async () => {

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { Bell, Plus, Edit2, Trash2, Loader2, Megaphone, Smartphone, Search, Calendar, X } from "lucide-react"
 import api from "../../services/api"
 import { useToast } from "../../contexts/ToastContext"
@@ -19,23 +19,27 @@ export default function AdminAnnouncements() {
   const [currentPage, setCurrentPage] = useState(1)
   const itemsPerPage = 8
 
-  const fetchAnnouncements = async () => {
+  const fetchAnnouncements = useCallback(async () => {
     try {
       setLoading(true)
       const res = await api.get('/admin/announcements')
       if (res.data.success) {
         setAnnouncements(res.data.data || [])
       }
-    } catch (err) {
+    } catch {
       error("Gagal memuat pengumuman")
     } finally {
       setLoading(false)
     }
-  }
+  }, [error])
 
   useEffect(() => {
-    fetchAnnouncements()
-  }, [])
+    let active = true
+    Promise.resolve().then(() => {
+      if (active) fetchAnnouncements()
+    })
+    return () => { active = false }
+  }, [fetchAnnouncements])
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -52,7 +56,7 @@ export default function AdminAnnouncements() {
       setEditingId(null)
       setFormData({ title: '', content: '', is_active: true, is_important: false })
       fetchAnnouncements()
-    } catch (err) {
+    } catch {
       error("Gagal menyimpan pengumuman")
     } finally {
       setSubmitLoading(false)
@@ -76,7 +80,7 @@ export default function AdminAnnouncements() {
       success("Pengumuman berhasil dihapus")
       setDeleteConfirmId(null)
       fetchAnnouncements()
-    } catch (err) {
+    } catch {
       error("Gagal menghapus pengumuman")
     }
   }
@@ -85,10 +89,6 @@ export default function AdminAnnouncements() {
     const q = searchQuery.toLowerCase()
     return item.title?.toLowerCase().includes(q) || item.content?.toLowerCase().includes(q)
   })
-
-  useEffect(() => {
-    setCurrentPage(1)
-  }, [searchQuery])
 
   const totalPages = Math.max(1, Math.ceil(filteredAnnouncements.length / itemsPerPage))
   const paginatedAnnouncements = filteredAnnouncements.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
@@ -236,7 +236,7 @@ export default function AdminAnnouncements() {
               placeholder="Cari pengumuman..."
               type="text"
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
             />
             <Search className="w-3.5 h-3.5 text-[#86868B] dark:text-slate-400 absolute left-2.5 top-2.5" />
           </div>

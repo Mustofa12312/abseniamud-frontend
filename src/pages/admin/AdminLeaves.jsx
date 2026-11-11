@@ -35,7 +35,11 @@ export default function AdminLeaves() {
   }, [error])
 
   useEffect(() => {
-    fetchLeaves()
+    let active = true
+    Promise.resolve().then(() => {
+      if (active) fetchLeaves()
+    })
+    return () => { active = false }
   }, [fetchLeaves])
 
   const handleUpdateStatus = async (id, status) => {
@@ -86,11 +90,6 @@ export default function AdminLeaves() {
     })
   }, [leaves, statusFilter, searchQuery])
 
-  // Reset pagination on filter or search change
-  useEffect(() => {
-    setCurrentPage(1)
-  }, [statusFilter, searchQuery])
-
   const totalPages = Math.max(1, Math.ceil(filteredLeaves.length / itemsPerPage))
   const paginatedLeaves = filteredLeaves.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
 
@@ -125,7 +124,7 @@ export default function AdminLeaves() {
               type="text"
               placeholder="Cari pengaju, email, alasan..."
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
               className="w-full pl-9 pr-4 py-1.5 text-xs bg-white dark:bg-slate-800 border border-[#E5E5EA] dark:border-slate-700 rounded-xl text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all shadow-apple-sm"
             />
           </div>
@@ -145,7 +144,7 @@ export default function AdminLeaves() {
               return (
                 <button
                   key={val}
-                  onClick={() => setStatusFilter(val)}
+                  onClick={() => { setStatusFilter(val); setCurrentPage(1); }}
                   type="button"
                   className={`px-3.5 py-1.5 rounded-lg text-xs transition-all cursor-pointer whitespace-nowrap ${
                     isActive 

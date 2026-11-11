@@ -60,7 +60,11 @@ export default function FacultyMaster() {
   }, [error]);
 
   useEffect(() => {
-    fetchFaculties();
+    let active = true;
+    Promise.resolve().then(() => {
+      if (active) fetchFaculties();
+    });
+    return () => { active = false; };
   }, [fetchFaculties]);
 
   const filteredFaculties = faculties.filter((fac) => {

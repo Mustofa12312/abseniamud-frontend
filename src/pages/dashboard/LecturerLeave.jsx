@@ -35,7 +35,11 @@ export default function LecturerLeave() {
   }, []);
 
   useEffect(() => {
-    fetchLeaves();
+    let active = true;
+    Promise.resolve().then(() => {
+      if (active) fetchLeaves();
+    });
+    return () => { active = false; };
   }, [fetchLeaves]);
 
   const handleChange = (e) => {

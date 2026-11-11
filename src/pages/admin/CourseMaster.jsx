@@ -68,7 +68,11 @@ export default function CourseMaster() {
   }, [filterFaculty, error]);
 
   useEffect(() => {
-    fetchData();
+    let active = true;
+    Promise.resolve().then(() => {
+      if (active) fetchData();
+    });
+    return () => { active = false; };
   }, [fetchData]);
 
   const filteredCourses = courses.filter((course) => {

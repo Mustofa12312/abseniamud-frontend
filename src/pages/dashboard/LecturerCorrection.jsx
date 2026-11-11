@@ -34,7 +34,11 @@ export default function LecturerCorrection() {
   }, []);
 
   useEffect(() => {
-    fetchCorrections();
+    let active = true;
+    Promise.resolve().then(() => {
+      if (active) fetchCorrections();
+    });
+    return () => { active = false; };
   }, [fetchCorrections]);
 
   const handleChange = (e) => {

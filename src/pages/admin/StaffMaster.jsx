@@ -64,7 +64,11 @@ export default function StaffMaster() {
   }, [error]);
 
   useEffect(() => {
-    fetchStaff();
+    let active = true;
+    Promise.resolve().then(() => {
+      if (active) fetchStaff();
+    });
+    return () => { active = false; };
   }, [fetchStaff]);
 
   const handleExportCSV = async () => {

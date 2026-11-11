@@ -32,9 +32,15 @@ export default function AdminDashboard() {
   }, [])
 
   useEffect(() => {
-    fetchStats()
+    let active = true
+    Promise.resolve().then(() => {
+      if (active) fetchStats()
+    })
     const interval = setInterval(fetchStats, 5 * 60 * 1000) // auto-refresh every 5 minutes
-    return () => clearInterval(interval)
+    return () => {
+      active = false
+      clearInterval(interval)
+    }
   }, [fetchStats])
 
   const getCardConfig = (title) => {

@@ -29,7 +29,11 @@ export default function CorrectionMaster() {
   }, [error]);
 
   useEffect(() => {
-    fetchCorrections();
+    let active = true;
+    Promise.resolve().then(() => {
+      if (active) fetchCorrections();
+    });
+    return () => { active = false; };
   }, [fetchCorrections]);
 
   const handleAction = async (id, actionType) => {

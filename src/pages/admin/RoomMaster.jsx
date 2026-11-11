@@ -62,7 +62,11 @@ export default function RoomMaster() {
   }, [error]);
 
   useEffect(() => {
-    fetchRooms();
+    let active = true;
+    Promise.resolve().then(() => {
+      if (active) fetchRooms();
+    });
+    return () => { active = false; };
   }, [fetchRooms]);
 
   const filteredRooms = rooms.filter((room) => {

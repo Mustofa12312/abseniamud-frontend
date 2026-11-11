@@ -42,7 +42,11 @@ export default function ReportMaster() {
   }, [selectedMonth, selectedYear, roleFilter, error]);
 
   useEffect(() => {
-    fetchReports();
+    let active = true;
+    Promise.resolve().then(() => {
+      if (active) fetchReports();
+    });
+    return () => { active = false; };
   }, [fetchReports]);
 
   const openDetail = async (id) => {

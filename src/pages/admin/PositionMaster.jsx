@@ -42,7 +42,11 @@ export default function PositionMaster() {
   }, [error]);
 
   useEffect(() => {
-    fetchData();
+    let active = true;
+    Promise.resolve().then(() => {
+      if (active) fetchData();
+    });
+    return () => { active = false; };
   }, [fetchData]);
 
   const handleOpenCreate = () => {

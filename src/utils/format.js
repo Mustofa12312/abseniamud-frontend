@@ -27,7 +27,11 @@ export function resolveLeaveDocument(documentPath, apiUrl) {
     return { type: 'url', href: trimmed, label: 'Buka Tautan Dokumen' };
   }
 
-  if (trimmed.startsWith('/storage/') || trimmed.includes('/') || FILE_EXT_REGEX.test(trimmed)) {
+  if (
+    trimmed.startsWith('/storage/') ||
+    /^(storage|leaves|uploads|documents)\/[^\s]+$/i.test(trimmed) ||
+    FILE_EXT_REGEX.test(trimmed)
+  ) {
     const base = getStorageBaseUrl(apiUrl);
     const cleanPath = trimmed.replace(/^\/+/, '');
     const href = cleanPath.startsWith('storage/') ? `${base}/${cleanPath}` : `${base}/storage/${cleanPath}`;

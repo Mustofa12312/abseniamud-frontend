@@ -83,13 +83,17 @@ export default function LecturerDashboard() {
   }, []);
 
   useEffect(() => {
-    fetchTodayStatus();
+    let active = true;
+    Promise.resolve().then(() => {
+      if (active) fetchTodayStatus();
+    });
     const now = new Date();
     Promise.allSettled([
       attendanceService.getSummary(now.getMonth() + 1, now.getFullYear()),
       featureService.getAnnouncements(),
       featureService.getSchedules(),
     ]).then(([sumRes, annRes, schRes]) => {
+      if (!active) return;
       if (sumRes.status === "fulfilled" && sumRes.value?.success) {
         setMonthlySummary(sumRes.value.data);
       }
@@ -100,6 +104,7 @@ export default function LecturerDashboard() {
         setSchedules(schRes.value.data || {});
       }
     });
+    return () => { active = false; };
   }, [fetchTodayStatus]);
 
   const handleCheckIn = async () => {
