@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -31,6 +31,71 @@ import api from "../services/api";
 import { getRoleDisplayLabel, isAcademicAdmin, resolveUserRole } from "../utils/rbac";
 
 const getNotifReadKey = (userId) => `iaimu_admin_notif_read_sig_${userId || "anon"}`;
+
+async function fetchAdminNotifications(academicAdmin) {
+  const items = [];
+  const [corrRes, leavesRes, annRes] = await Promise.allSettled([
+    academicAdmin ? adminService.getCorrections({ status: "PENDING", per_page: 10 }) : Promise.resolve(null),
+    academicAdmin ? api.get("/admin/leaves?status=PENDING") : Promise.resolve(null),
+    featureService.getAnnouncements(),
+  ]);
+
+  if (leavesRes.status === "fulfilled" && leavesRes.value?.data?.success) {
+    const leavePayload = leavesRes.value.data.data;
+    const leaveList = Array.isArray(leavePayload) ? leavePayload : leavePayload?.data || [];
+    const pendingLeaves =
+      leavePayload?.total ??
+      leaveList.filter((l) => String(l.status).toUpperCase() === "PENDING").length;
+    if (pendingLeaves > 0) {
+      items.push({
+        id: `leaves-${pendingLeaves}`,
+        icon: FileText,
+        color: "bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400",
+        message: `${pendingLeaves} pengajuan izin menunggu persetujuan admin.`,
+        meta: "Klik untuk tinjau izin",
+        path: "/admin/leaves",
+      });
+    }
+  }
+
+  if (corrRes.status === "fulfilled" && corrRes.value?.success) {
+    const corrList = Array.isArray(corrRes.value.data) ? corrRes.value.data : [];
+    const corrMeta = corrRes.value.meta;
+    const pendingCorr =
+      corrMeta?.pending_total ??
+      corrMeta?.total ??
+      corrList.filter((c) => String(c.status).toUpperCase() === "PENDING").length;
+    if (pendingCorr > 0) {
+      items.push({
+        id: `corr-${pendingCorr}`,
+        icon: ShieldCheck,
+        color: "bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400",
+        message: `${pendingCorr} koreksi presensi menunggu verifikasi.`,
+        meta: "Klik untuk proses koreksi",
+        path: "/admin/corrections",
+      });
+    }
+  }
+
+  if (annRes.status === "fulfilled" && annRes.value?.success) {
+    const announcements = Array.isArray(annRes.value.data) ? annRes.value.data : [];
+    if (announcements.length > 0) {
+      const latest = announcements[0];
+      items.push({
+        id: `ann-${latest.id}`,
+        icon: Megaphone,
+        color: "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400",
+        message: `Pengumuman terbaru: ${latest.title}`,
+        meta: latest.created_at
+          ? new Date(latest.created_at).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" })
+          : "Pengumuman Kampus",
+        path: academicAdmin ? "/admin/announcements" : "/admin",
+      });
+    }
+  }
+
+  return items;
+}
 
 export default function AdminLayout() {
   const { user, logout } = useAuth();
@@ -106,82 +171,28 @@ export default function AdminLayout() {
     ];
   }, [userRole]);
 
-  const loadNotifications = useCallback(async () => {
+  const loadNotifications = async () => {
     if (!user) return;
     try {
-      const items = [];
-      const [corrRes, leavesRes, annRes] = await Promise.allSettled([
-        academicAdmin ? adminService.getCorrections({ status: "PENDING", per_page: 10 }) : Promise.resolve(null),
-        academicAdmin ? api.get("/admin/leaves?status=PENDING") : Promise.resolve(null),
-        featureService.getAnnouncements(),
-      ]);
-
-      if (leavesRes.status === "fulfilled" && leavesRes.value?.data?.success) {
-        const leavePayload = leavesRes.value.data.data;
-        const leaveList = Array.isArray(leavePayload) ? leavePayload : leavePayload?.data || [];
-        const pendingLeaves =
-          leavePayload?.total ??
-          leaveList.filter((l) => String(l.status).toUpperCase() === "PENDING").length;
-        if (pendingLeaves > 0) {
-          items.push({
-            id: `leaves-${pendingLeaves}`,
-            icon: FileText,
-            color: "bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400",
-            message: `${pendingLeaves} pengajuan izin menunggu persetujuan admin.`,
-            meta: "Klik untuk tinjau izin",
-            path: "/admin/leaves",
-          });
-        }
-      }
-
-      if (corrRes.status === "fulfilled" && corrRes.value?.success) {
-        const corrList = Array.isArray(corrRes.value.data) ? corrRes.value.data : [];
-        const corrMeta = corrRes.value.meta;
-        const pendingCorr =
-          corrMeta?.pending_total ??
-          corrMeta?.total ??
-          corrList.filter((c) => String(c.status).toUpperCase() === "PENDING").length;
-        if (pendingCorr > 0) {
-          items.push({
-            id: `corr-${pendingCorr}`,
-            icon: ShieldCheck,
-            color: "bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400",
-            message: `${pendingCorr} koreksi presensi menunggu verifikasi.`,
-            meta: "Klik untuk proses koreksi",
-            path: "/admin/corrections",
-          });
-        }
-      }
-
-      if (annRes.status === "fulfilled" && annRes.value?.success) {
-        const announcements = Array.isArray(annRes.value.data) ? annRes.value.data : [];
-        if (announcements.length > 0) {
-          const latest = announcements[0];
-          items.push({
-            id: `ann-${latest.id}`,
-            icon: Megaphone,
-            color: "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400",
-            message: `Pengumuman terbaru: ${latest.title}`,
-            meta: latest.created_at
-              ? new Date(latest.created_at).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" })
-              : "Pengumuman Kampus",
-            path: academicAdmin ? "/admin/announcements" : "/admin",
-          });
-        }
-      }
-
+      const items = await fetchAdminNotifications(academicAdmin);
       setNotifications(items);
     } catch {
       // Non-critical notification banner failure should stay silent
     }
-  }, [user, academicAdmin]);
+  };
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      loadNotifications();
-    }, 0);
-    return () => clearTimeout(timer);
-  }, [loadNotifications]);
+    if (!user) return;
+    let cancelled = false;
+    fetchAdminNotifications(academicAdmin)
+      .then((items) => {
+        if (!cancelled) setNotifications(items);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [user, academicAdmin]);
 
   const currentNotifSig = useMemo(() => notifications.map((n) => n.id).join("|"), [notifications]);
   const unreadCount = notifications.length > 0 && currentNotifSig !== readSig ? notifications.length : 0;
