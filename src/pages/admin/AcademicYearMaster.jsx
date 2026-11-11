@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useCallback } from "react"
-import { 
-  Calendar, Plus, Edit2, Trash2, Check, Search, Info, Loader2, X
+import {
+  Calendar, Plus, Edit2, Trash2, Check, Search, Info, Loader2, X, CalendarOff
 } from "lucide-react"
 import { masterDataService } from "../../services/masterData"
 import { useToast } from "../../contexts/ToastContext"
@@ -8,7 +8,9 @@ import { useToast } from "../../contexts/ToastContext"
 export default function AcademicYearMaster() {
   const { success, error } = useToast()
   const [academicYears, setAcademicYears] = useState([])
+  const [holidays, setHolidays] = useState([])
   const [loading, setLoading] = useState(true)
+  const [holidaysLoading, setHolidaysLoading] = useState(true)
 
   // Search & Filter state
   const [searchQuery, setSearchQuery] = useState("")
@@ -17,9 +19,11 @@ export default function AcademicYearMaster() {
   // Modal state
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
+  const [isHolidayModalOpen, setIsHolidayModalOpen] = useState(false)
   const [editingYear, setEditingYear] = useState(null)
   const [deletingYear, setDeletingYear] = useState(null)
   const [submitting, setSubmitting] = useState(false)
+  const [holidaySubmitting, setHolidaySubmitting] = useState(false)
   const [activatingId, setActivatingId] = useState(null)
 
   const [formData, setFormData] = useState({
@@ -28,22 +32,77 @@ export default function AcademicYearMaster() {
     is_active: false
   })
 
+  const [holidayForm, setHolidayForm] = useState({
+    date: '',
+    name: '',
+    is_active: true
+  })
+
   const fetchAcademicYears = useCallback(async () => {
     try {
       const res = await masterDataService.getAcademicYears()
       if (res.success) {
         setAcademicYears(res.data || [])
       }
-    } catch (err) {
-      console.error("Failed to load academic years", err)
+    } catch {
+      error("Gagal memuat data Tahun Akademik.")
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [error])
+
+  const fetchHolidays = useCallback(async () => {
+    try {
+      setHolidaysLoading(true)
+      const res = await masterDataService.getHolidays()
+      if (res.success) {
+        setHolidays(res.data || [])
+      }
+    } catch {
+      error("Gagal memuat daftar hari libur kampus.")
+    } finally {
+      setHolidaysLoading(false)
+    }
+  }, [error])
 
   useEffect(() => {
     fetchAcademicYears()
-  }, [fetchAcademicYears])
+    fetchHolidays()
+  }, [fetchAcademicYears, fetchHolidays])
+
+  const handleOpenCreateHoliday = () => {
+    setHolidayForm({ date: '', name: '', is_active: true })
+    setIsHolidayModalOpen(true)
+  }
+
+  const handleSubmitHoliday = async (e) => {
+    e.preventDefault()
+    setHolidaySubmitting(true)
+    try {
+      const res = await masterDataService.createHoliday(holidayForm)
+      if (res.success) {
+        success(res.message || "Hari libur berhasil ditambahkan.")
+        await fetchHolidays()
+        setIsHolidayModalOpen(false)
+      }
+    } catch (err) {
+      error(err.response?.data?.message || "Gagal menambahkan hari libur.")
+    } finally {
+      setHolidaySubmitting(false)
+    }
+  }
+
+  const handleDeleteHoliday = async (holiday) => {
+    try {
+      const res = await masterDataService.deleteHoliday(holiday.id)
+      if (res.success) {
+        success(res.message || "Hari libur berhasil dihapus.")
+        await fetchHolidays()
+      }
+    } catch (err) {
+      error(err.response?.data?.message || "Gagal menghapus hari libur.")
+    }
+  }
 
   const handleOpenCreate = () => {
     setEditingYear(null)
@@ -429,6 +488,80 @@ export default function AcademicYearMaster() {
       </section>
       {/* ── END: NoticeCard ── */}
 
+      {/* ── BEGIN: CampusHolidaysSection ── */}
+      <section className="rounded-2xl bg-white dark:bg-slate-800 border border-[#E5E5EA] dark:border-slate-700/60 shadow-apple-card overflow-hidden">
+        <div className="p-5 sm:p-6 border-b border-[#F0F0F2] dark:border-slate-700/60 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex items-start gap-3">
+            <div className="w-10 h-10 rounded-xl bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
+              <CalendarOff className="w-5 h-5" />
+            </div>
+            <div>
+              <h2 className="text-base font-bold text-[#1D1D1F] dark:text-white tracking-tight">
+                Daftar Hari Libur Kampus
+              </h2>
+              <p className="text-xs text-[#86868B] dark:text-slate-400 mt-0.5">
+                Tanggal libur aktif menonaktifkan kewajiban presensi reguler untuk seluruh dosen & tendik.
+              </p>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={handleOpenCreateHoliday}
+            className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#F5F5F7] dark:bg-slate-700 hover:bg-[#EBEBED] dark:hover:bg-slate-600 text-xs font-semibold text-[#1D1D1F] dark:text-white transition-colors cursor-pointer shrink-0"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            Tambah Hari Libur
+          </button>
+        </div>
+
+        <div className="p-5 sm:p-6">
+          {holidaysLoading ? (
+            <p className="text-xs text-[#86868B] animate-pulse py-4 text-center">
+              Memuat hari libur kampus...
+            </p>
+          ) : holidays.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+              {holidays.map((holiday) => (
+                <div
+                  key={holiday.id}
+                  className="flex items-center justify-between gap-3 p-3.5 rounded-xl border border-[#E5E5EA] dark:border-slate-700/70 bg-[#FAFAFC] dark:bg-slate-900/50"
+                >
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-semibold text-[#1D1D1F] dark:text-white truncate">
+                        {holiday.name}
+                      </span>
+                      {holiday.is_active === false && (
+                        <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-slate-200 dark:bg-slate-700 text-[#6E6E73] dark:text-slate-300">
+                          Nonaktif
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-[11px] text-[#86868B] dark:text-slate-400 mt-0.5">
+                      {formatUpdatedDate(holiday.date)}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => handleDeleteHoliday(holiday)}
+                    title="Hapus hari libur"
+                    className="p-1.5 rounded-lg text-[#86868B] hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors cursor-pointer shrink-0"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-xs text-[#86868B] dark:text-slate-400 text-center py-4">
+              Belum ada hari libur kampus yang tercatat.
+            </p>
+          )}
+        </div>
+      </section>
+      {/* ── END: CampusHolidaysSection ── */}
+
       {/* ── BEGIN: Create / Edit Apple Modal ── */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-md animate-in fade-in duration-200">
@@ -576,6 +709,102 @@ export default function AcademicYearMaster() {
         </div>
       )}
       {/* ── END: Delete Confirmation Modal ── */}
+
+      {/* ── BEGIN: Create Holiday Modal ── */}
+      {isHolidayModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-md animate-in fade-in duration-200">
+          <div className="w-full max-w-md bg-white dark:bg-slate-800 rounded-2xl shadow-apple-hover border border-[#E5E5EA] dark:border-slate-700 overflow-hidden animate-in zoom-in-95 duration-150">
+            <div className="px-6 py-4 bg-[#FAFAFC] dark:bg-slate-850 border-b border-[#F0F0F2] dark:border-slate-700 flex items-center justify-between">
+              <div>
+                <h3 className="text-base font-bold text-[#1D1D1F] dark:text-white tracking-tight">
+                  Tambah Hari Libur Kampus
+                </h3>
+                <p className="text-xs text-[#86868B] dark:text-slate-400 mt-0.5">
+                  Presensi reguler dinonaktifkan pada tanggal yang dipilih.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsHolidayModalOpen(false)}
+                className="p-1.5 rounded-lg text-[#86868B] hover:text-[#1D1D1F] dark:hover:text-white hover:bg-[#EBEBED] dark:hover:bg-slate-700 transition-colors cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSubmitHoliday} className="p-6 space-y-4">
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-[#1D1D1F] dark:text-slate-200 block">
+                  Tanggal Libur
+                </label>
+                <input
+                  type="date"
+                  value={holidayForm.date}
+                  onChange={(e) => setHolidayForm((prev) => ({ ...prev, date: e.target.value }))}
+                  required
+                  className="w-full px-3.5 py-2.5 text-xs bg-white dark:bg-slate-900 border border-[#E5E5EA] dark:border-slate-700 rounded-xl text-[#1D1D1F] dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 shadow-apple-sm transition-all"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-[#1D1D1F] dark:text-slate-200 block">
+                  Nama / Keterangan Libur
+                </label>
+                <input
+                  type="text"
+                  placeholder="Contoh: Hari Raya Idul Fitri / Dies Natalis"
+                  value={holidayForm.name}
+                  onChange={(e) => setHolidayForm((prev) => ({ ...prev, name: e.target.value }))}
+                  required
+                  className="w-full px-3.5 py-2.5 text-xs bg-white dark:bg-slate-900 border border-[#E5E5EA] dark:border-slate-700 rounded-xl text-[#1D1D1F] dark:text-white placeholder-[#86868B] focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 shadow-apple-sm transition-all"
+                />
+              </div>
+
+              <label
+                htmlFor="holiday_is_active"
+                className="flex items-center gap-2.5 p-3 rounded-xl bg-[#F5F5F7] dark:bg-slate-900/60 border border-[#E5E5EA] dark:border-slate-700 cursor-pointer"
+              >
+                <input
+                  type="checkbox"
+                  id="holiday_is_active"
+                  checked={holidayForm.is_active}
+                  onChange={(e) => setHolidayForm((prev) => ({ ...prev, is_active: e.target.checked }))}
+                  className="h-4 w-4 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500 accent-emerald-600"
+                />
+                <span className="text-xs font-medium text-[#1D1D1F] dark:text-slate-200">
+                  Aktifkan libur pada tanggal ini
+                </span>
+              </label>
+
+              <div className="flex gap-2.5 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setIsHolidayModalOpen(false)}
+                  disabled={holidaySubmitting}
+                  className="flex-1 px-4 py-2.5 rounded-xl border border-[#E5E5EA] dark:border-slate-700 text-xs font-semibold text-[#1D1D1F] dark:text-slate-300 hover:bg-[#F5F5F7] dark:hover:bg-slate-700 transition-colors cursor-pointer disabled:opacity-50"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  disabled={holidaySubmitting}
+                  className="flex-1 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold shadow-apple-sm transition-all cursor-pointer disabled:opacity-50 inline-flex items-center justify-center gap-2"
+                >
+                  {holidaySubmitting ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      <span>Menyimpan...</span>
+                    </>
+                  ) : (
+                    <span>Simpan Libur</span>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+      {/* ── END: Create Holiday Modal ── */}
     </div>
   )
 }

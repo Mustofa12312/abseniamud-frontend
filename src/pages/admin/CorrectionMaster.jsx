@@ -1,168 +1,193 @@
-import { useState, useEffect } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/Card"
-import { Badge } from "../../components/ui/Badge"
-import { Button } from "../../components/ui/Button"
-import { Check, X, Clock, AlertCircle, FileText, Calendar as CalendarIcon, User } from "lucide-react"
-import { adminService } from "../../services/admin"
-import { useToast } from "../../contexts/ToastContext"
-import { EmptyState } from "../../components/ui/EmptyState"
+import { useState, useEffect, useCallback, useMemo } from "react";
+import { Check, X, Clock, AlertCircle, FileText, Calendar as CalendarIcon, User } from "lucide-react";
+import { Card } from "../../components/ui/Card";
+import { Badge } from "../../components/ui/Badge";
+import { Button } from "../../components/ui/Button";
+import { PageHeader } from "../../components/ui/PageHeader";
+import { EmptyState } from "../../components/ui/EmptyState";
+import { adminService } from "../../services/admin";
+import { useToast } from "../../contexts/ToastContext";
 
 export default function CorrectionMaster() {
-  const { success, error } = useToast()
-  const [corrections, setCorrections] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [statusFilter, setStatusFilter] = useState('ALL')
+  const { success, error } = useToast();
+  const [corrections, setCorrections] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [statusFilter, setStatusFilter] = useState("ALL");
+  const [processingId, setProcessingId] = useState(null);
 
-  const fetchCorrections = async () => {
+  const fetchCorrections = useCallback(async () => {
     try {
-      const res = await adminService.getCorrections()
+      const res = await adminService.getCorrections();
       if (res.success) {
-        setCorrections(res.data)
+        setCorrections(res.data || []);
       }
-    } catch (err) {
-      console.error(err)
+    } catch {
+      error("Gagal memuat pengajuan koreksi.");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  }, [error]);
 
   useEffect(() => {
-    fetchCorrections()
-  }, [])
+    fetchCorrections();
+  }, [fetchCorrections]);
 
   const handleAction = async (id, actionType) => {
+    setProcessingId(id);
     try {
-      if (actionType === 'approve') {
-        const res = await adminService.approveCorrection(id)
-        if (res.success) {
-          setCorrections(corrections.map(c => c.id === id ? { ...c, status: 'APPROVED' } : c))
-          success("Pengajuan berhasil disetujui.")
-        }
-      } else {
-        const res = await adminService.rejectCorrection(id)
-        if (res.success) {
-          setCorrections(corrections.map(c => c.id === id ? { ...c, status: 'REJECTED' } : c))
-          success("Pengajuan berhasil ditolak.")
-        }
+      const res =
+        actionType === "approve"
+          ? await adminService.approveCorrection(id)
+          : await adminService.rejectCorrection(id);
+
+      if (res.success) {
+        const nextStatus = actionType === "approve" ? "APPROVED" : "REJECTED";
+        setCorrections((prev) => prev.map((c) => (c.id === id ? { ...c, status: nextStatus } : c)));
+        success(actionType === "approve" ? "Pengajuan berhasil disetujui." : "Pengajuan berhasil ditolak.");
       }
     } catch (err) {
-      error(err.response?.data?.message || "Gagal memproses pengajuan.")
-      console.error(err)
+      error(err.response?.data?.message || "Gagal memproses pengajuan.");
+    } finally {
+      setProcessingId(null);
     }
-  }
+  };
 
-  const getStatusBadge = (status) => {
-    switch(status) {
-      case 'PENDING': return <Badge variant="outline" className="bg-amber-50 text-amber-600 border-amber-200">Menunggu</Badge>
-      case 'APPROVED': return <Badge variant="outline" className="bg-emerald-50 text-emerald-600 border-emerald-200">Disetujui</Badge>
-      case 'REJECTED': return <Badge variant="outline" className="bg-rose-50 text-rose-600 border-rose-200">Ditolak</Badge>
-      default: return null
+  const renderStatusBadge = (status) => {
+    switch (status) {
+      case "PENDING":
+        return <Badge variant="warning">Menunggu</Badge>;
+      case "APPROVED":
+        return <Badge variant="success">Disetujui</Badge>;
+      case "REJECTED":
+        return <Badge variant="danger">Ditolak</Badge>;
+      default:
+        return <Badge>{status}</Badge>;
     }
-  }
+  };
 
-  const pendingCount = corrections.filter(c => c.status === 'PENDING').length
-  const filteredCorrections = corrections.filter(c => statusFilter === 'ALL' ? true : c.status === statusFilter)
+  const pendingCount = useMemo(
+    () => corrections.filter((c) => c.status === "PENDING").length,
+    [corrections]
+  );
+
+  const filteredCorrections = useMemo(
+    () => corrections.filter((c) => (statusFilter === "ALL" ? true : c.status === statusFilter)),
+    [corrections, statusFilter]
+  );
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h2 className="text-2xl font-bold tracking-tight text-slate-800 flex items-center gap-2">
-            Koreksi Presensi
-            {pendingCount > 0 && (
-              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-rose-500 text-[10px] font-bold text-white">
-                {pendingCount}
-              </span>
-            )}
-          </h2>
-          <p className="text-slate-500 mt-1">Tinjau dan proses pengajuan pembenaran absensi dari dosen.</p>
-        </div>
-        <div className="flex gap-1 flex-wrap">
-          {[['ALL','Semua'],['PENDING','Menunggu'],['APPROVED','Disetujui'],['REJECTED','Ditolak']].map(([val, label]) => (
-            <button
-              key={val}
-              onClick={() => setStatusFilter(val)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                statusFilter === val ? 'bg-brand-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-              }`}
-            >{label} {val === 'PENDING' && pendingCount > 0 ? `(${pendingCount})` : ''}</button>
-          ))}
-        </div>
-      </div>
+      <PageHeader
+        title="Koreksi Presensi"
+        description="Tinjau dan proses pengajuan pembenaran absensi dari dosen maupun tendik."
+        badge={
+          pendingCount > 0 && (
+            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-rose-50 dark:bg-rose-950/50 text-rose-700 dark:text-rose-400 border border-rose-200/80 dark:border-rose-800/50">
+              {pendingCount} Menunggu
+            </span>
+          )
+        }
+        actions={
+          <div className="flex gap-1.5 flex-wrap">
+            {[
+              ["ALL", "Semua"],
+              ["PENDING", "Menunggu"],
+              ["APPROVED", "Disetujui"],
+              ["REJECTED", "Ditolak"],
+            ].map(([val, label]) => (
+              <button
+                key={val}
+                type="button"
+                onClick={() => setStatusFilter(val)}
+                className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors cursor-pointer ${
+                  statusFilter === val
+                    ? "bg-emerald-600 text-white shadow-xs"
+                    : "bg-white dark:bg-slate-800 border border-[#E5E5EA] dark:border-slate-700 text-[#86868B] dark:text-slate-300 hover:bg-[#F5F5F7]"
+                }`}
+              >
+                {label}
+                {val === "PENDING" && pendingCount > 0 ? ` (${pendingCount})` : ""}
+              </button>
+            ))}
+          </div>
+        }
+      />
 
-      <div className="grid gap-6">
-        <Card className="border-none shadow-sm">
-          <CardHeader className="bg-slate-50/50 pb-4 border-b border-slate-100">
-            <CardTitle className="text-lg flex items-center gap-2">
-              <FileText size={18} className="text-slate-500" /> Kotak Masuk Pengajuan
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-0">
-            {loading ? (
-              <div className="p-12 text-center text-slate-500 animate-pulse">Memuat data pengajuan...</div>
-            ) : filteredCorrections.length > 0 ? (
-              <div className="divide-y divide-slate-100">
-                {filteredCorrections.map((item) => (
-                  <div key={item.id} className="p-5 hover:bg-slate-50 transition-colors flex flex-col md:flex-row md:items-start justify-between gap-4 group">
-                    <div className="space-y-2 flex-1">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span className="font-semibold text-slate-800 flex items-center gap-1.5">
-                          <User size={16} className="text-brand-600" /> {item.name}
-                        </span>
-                        <span className="text-slate-300">•</span>
-                        <span className="text-sm font-medium text-slate-700 flex items-center gap-1.5 bg-slate-100 px-2 py-0.5 rounded-full">
-                          <CalendarIcon size={12} /> {item.date}
-                        </span>
-                        <span className="text-slate-300">•</span>
-                        <span className="text-sm font-medium text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full">
-                          {item.type}
-                        </span>
-                        <div className="md:ml-auto">
-                          {getStatusBadge(item.status)}
-                        </div>
-                      </div>
-                      <div className="bg-white border border-slate-100 rounded-lg p-3 shadow-sm mt-2 flex items-start gap-3">
-                        <AlertCircle size={16} className="text-slate-400 mt-0.5 shrink-0" />
-                        <p className="text-sm text-slate-600 leading-relaxed italic">
-                          "{item.reason}"
-                        </p>
-                      </div>
-                      <p className="text-xs text-slate-400 flex items-center gap-1">
-                        <Clock size={12} /> Dikirim pada {item.submitted_at}
-                      </p>
-                    </div>
+      <Card className="overflow-hidden">
+        <div className="px-6 py-4 bg-[#F9F9FB] dark:bg-slate-900/50 border-b border-[#E5E5EA] dark:border-slate-700/60 flex items-center justify-between">
+          <div className="flex items-center gap-2 text-sm font-semibold">
+            <FileText size={16} className="text-emerald-600" />
+            <span>Kotak Masuk Pengajuan</span>
+          </div>
+          <Badge>{filteredCorrections.length} Pengajuan</Badge>
+        </div>
 
-                    {item.status === 'PENDING' && (
-                      <div className="flex items-center gap-2 md:shrink-0 pt-2 md:pt-0">
-                        <Button 
-                          onClick={() => handleAction(item.id, 'approve')}
-                          className="bg-emerald-600 hover:bg-emerald-700 text-white flex-1 md:flex-none"
-                        >
-                          <Check size={16} className="mr-1" /> Setujui
-                        </Button>
-                        <Button 
-                          onClick={() => handleAction(item.id, 'reject')}
-                          variant="outline" 
-                          className="border-rose-200 text-rose-600 hover:bg-rose-50 flex-1 md:flex-none"
-                        >
-                          <X size={16} className="mr-1" /> Tolak
-                        </Button>
-                      </div>
-                    )}
+        {loading ? (
+          <div className="p-12 text-center text-sm text-[#86868B] animate-pulse">
+            Memuat data pengajuan koreksi...
+          </div>
+        ) : filteredCorrections.length === 0 ? (
+          <EmptyState
+            icon={FileText}
+            title="Semua Bersih!"
+            description="Tidak ada pengajuan koreksi presensi pada filter saat ini."
+          />
+        ) : (
+          <div className="divide-y divide-[#F2F2F7] dark:divide-slate-700/50">
+            {filteredCorrections.map((item) => (
+              <div
+                key={item.id}
+                className="p-5 hover:bg-[#F9F9FB] dark:hover:bg-slate-700/25 transition-colors flex flex-col md:flex-row md:items-start justify-between gap-4"
+              >
+                <div className="space-y-2 flex-1 min-w-0">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="font-semibold text-sm flex items-center gap-1.5">
+                      <User size={15} className="text-emerald-600" /> {item.name}
+                    </span>
+                    <Badge variant="default">
+                      <CalendarIcon size={11} /> {item.date}
+                    </Badge>
+                    <Badge variant="warning">{item.type}</Badge>
+                    {renderStatusBadge(item.status)}
                   </div>
-                ))}
+
+                  <div className="bg-[#F9F9FB] dark:bg-slate-900/60 border border-[#E5E5EA] dark:border-slate-700/60 rounded-xl p-3 flex items-start gap-2.5">
+                    <AlertCircle size={15} className="text-[#86868B] mt-0.5 shrink-0" />
+                    <p className="text-xs sm:text-sm text-[#1D1D1F] dark:text-slate-300 italic">
+                      "{item.reason}"
+                    </p>
+                  </div>
+
+                  <p className="text-[11px] text-[#86868B] flex items-center gap-1">
+                    <Clock size={11} /> Dikirim pada {item.submitted_at}
+                  </p>
+                </div>
+
+                {item.status === "PENDING" && (
+                  <div className="flex items-center gap-2 shrink-0 pt-1 md:pt-0">
+                    <Button
+                      size="sm"
+                      disabled={processingId === item.id}
+                      onClick={() => handleAction(item.id, "approve")}
+                    >
+                      <Check size={14} /> Setujui
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled={processingId === item.id}
+                      onClick={() => handleAction(item.id, "reject")}
+                      className="text-rose-600 border-rose-200 dark:border-rose-900/60 hover:bg-rose-50 dark:hover:bg-rose-950/40"
+                    >
+                      <X size={14} /> Tolak
+                    </Button>
+                  </div>
+                )}
               </div>
-            ) : (
-              <div className="h-64 flex items-center justify-center">
-                <EmptyState 
-                  title="Semua Bersih!" 
-                  description="Tidak ada pengajuan koreksi presensi saat ini." 
-                />
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
+            ))}
+          </div>
+        )}
+      </Card>
     </div>
-  )
+  );
 }

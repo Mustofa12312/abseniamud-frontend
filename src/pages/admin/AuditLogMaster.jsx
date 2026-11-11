@@ -1,145 +1,189 @@
-import { useState, useEffect } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/Card"
-import { Badge } from "../../components/ui/Badge"
-import { Input } from "../../components/ui/Input"
-import { ShieldCheck, Clock, Activity, User, Monitor, Search } from "lucide-react"
-import { adminService } from "../../services/admin"
-import { EmptyState } from "../../components/ui/EmptyState"
+import { useState, useEffect, useMemo } from "react";
+import { ShieldCheck, Clock, Activity, User, Monitor, Search } from "lucide-react";
+import { Card } from "../../components/ui/Card";
+import { Badge } from "../../components/ui/Badge";
+import { Input } from "../../components/ui/Input";
+import { PageHeader } from "../../components/ui/PageHeader";
+import { Pagination } from "../../components/ui/Pagination";
+import { EmptyState } from "../../components/ui/EmptyState";
+import { adminService } from "../../services/admin";
 
 export default function AuditLogMaster() {
-  const [logs, setLogs] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [searchQuery, setSearchQuery] = useState('')
-  const [actionFilter, setActionFilter] = useState('ALL')
+  const [logs, setLogs] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [actionFilter, setActionFilter] = useState("ALL");
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 15;
 
   useEffect(() => {
-    const fetchLogs = async () => {
-      try {
-        const res = await adminService.getAuditLogs()
-        if (res.success) {
-          setLogs(res.data)
+    let cancelled = false;
+    adminService
+      .getAuditLogs()
+      .then((res) => {
+        if (!cancelled && res.success) {
+          setLogs(res.data || []);
         }
-      } catch (err) {
-        console.error(err)
-      } finally {
-        setLoading(false)
-      }
-    }
-    fetchLogs()
-  }, [])
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
-  const getActionColor = (action) => {
-    if (action.includes('APPROVE')) return 'text-emerald-600 bg-emerald-50 border-emerald-200'
-    if (action.includes('REJECT') || action.includes('DELETE')) return 'text-rose-600 bg-rose-50 border-rose-200'
-    if (action.includes('UPDATE')) return 'text-amber-600 bg-amber-50 border-amber-200'
-    return 'text-brand-600 bg-brand-50 border-brand-200'
-  }
+  const getActionVariant = (action = "") => {
+    if (action.includes("APPROVE") || action.includes("CREATE")) return "success";
+    if (action.includes("REJECT") || action.includes("DELETE")) return "danger";
+    if (action.includes("UPDATE") || action.includes("RESET")) return "warning";
+    return "info";
+  };
 
-  const filteredLogs = logs.filter(log => {
-    const matchSearch = !searchQuery || 
-      log.admin_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      log.action?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      log.target?.toLowerCase().includes(searchQuery.toLowerCase())
-    const matchAction = actionFilter === 'ALL' || log.action?.includes(actionFilter)
-    return matchSearch && matchAction
-  })
+  const filteredLogs = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    return logs.filter((log) => {
+      const matchSearch =
+        !q ||
+        log.admin_name?.toLowerCase().includes(q) ||
+        log.action?.toLowerCase().includes(q) ||
+        log.target?.toLowerCase().includes(q);
+      const matchAction = actionFilter === "ALL" || log.action?.includes(actionFilter);
+      return matchSearch && matchAction;
+    });
+  }, [logs, searchQuery, actionFilter]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredLogs.length / itemsPerPage));
+  const safePage = Math.min(currentPage, totalPages);
+  const paginatedLogs = filteredLogs.slice((safePage - 1) * itemsPerPage, safePage * itemsPerPage);
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h2 className="text-2xl font-bold tracking-tight text-slate-800 flex items-center gap-2">
-            Audit Log <ShieldCheck className="text-emerald-500" />
-          </h2>
-          <p className="text-slate-500 mt-1">Rekam jejak forensik dari setiap perubahan krusial di sistem.</p>
-        </div>
-        <div className="flex flex-wrap gap-2 items-center">
+      <PageHeader
+        title="Audit Log"
+        description="Rekam jejak forensik dari setiap perubahan krusial pada sistem."
+        badge={<ShieldCheck size={18} className="text-emerald-600" />}
+      />
+
+      {/* Filter Bar */}
+      <Card className="p-4 flex flex-col sm:flex-row gap-3 items-stretch sm:items-center justify-between">
+        <div className="w-full sm:w-64">
           <Input
             icon={Search}
-            placeholder="Cari log..."
-            className="w-full sm:w-52"
+            placeholder="Cari admin, aksi, atau target..."
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={(e) => {
+              setSearchQuery(e.target.value);
+              setCurrentPage(1);
+            }}
           />
-          <div className="flex gap-1">
-            {[['ALL','Semua'],['APPROVE','Setujui'],['REJECT','Tolak'],['DELETE','Hapus'],['UPDATE','Update'],['CREATE','Buat']].map(([val, label]) => (
-              <button
-                key={val}
-                onClick={() => setActionFilter(val)}
-                className={`px-2.5 py-1 rounded-md text-xs font-medium transition-colors ${
-                  actionFilter === val ? 'bg-brand-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                }`}
-              >{label}</button>
-            ))}
-          </div>
         </div>
-      </div>
+        <div className="flex flex-wrap gap-1.5">
+          {[
+            ["ALL", "Semua"],
+            ["APPROVE", "Setujui"],
+            ["REJECT", "Tolak"],
+            ["DELETE", "Hapus"],
+            ["UPDATE", "Update"],
+            ["CREATE", "Buat"],
+          ].map(([val, label]) => (
+            <button
+              key={val}
+              type="button"
+              onClick={() => {
+                setActionFilter(val);
+                setCurrentPage(1);
+              }}
+              className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors cursor-pointer ${
+                actionFilter === val
+                  ? "bg-emerald-600 text-white shadow-xs"
+                  : "bg-[#F5F5F7] dark:bg-slate-800 text-[#86868B] dark:text-slate-300 hover:bg-[#E8E8ED]"
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      </Card>
 
-      <Card className="border-none shadow-sm">
-        <CardHeader className="bg-slate-50/50 pb-4 border-b border-slate-100">
-          <CardTitle className="text-lg flex justify-between items-center">
-            <span className="flex items-center gap-2">
-              <Activity size={18} className="text-slate-500" /> Riwayat Aktivitas
-            </span>
-            <Badge variant="outline" className="bg-white">{filteredLogs.length} Data</Badge>
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="p-0">
-          {loading ? (
-            <div className="p-12 text-center text-slate-500 animate-pulse">Menarik data dari database...</div>
-          ) : filteredLogs.length > 0 ? (
-            <div className="divide-y divide-slate-100">
-              {filteredLogs.map((log) => (
-                <div key={log.id} className="p-5 hover:bg-slate-50 transition-colors flex flex-col md:flex-row md:items-start gap-4">
-                  
-                  {/* Timestamp & IP Column */}
-                  <div className="md:w-48 shrink-0 space-y-2">
-                    <p className="font-semibold text-sm text-slate-700 flex items-center gap-1.5">
-                      <Clock size={14} className="text-brand-500"/> {log.created_at.split(' ')[0]}
-                    </p>
-                    <p className="text-xs text-slate-500 pl-5">{log.created_at.split(' ')[1]}</p>
-                    <p className="text-[10px] text-slate-400 flex items-center gap-1 font-mono bg-slate-100 w-fit px-1.5 py-0.5 rounded mt-2">
-                      <Monitor size={10} /> {log.ip_address || '127.0.0.1'}
-                    </p>
-                  </div>
+      <Card className="overflow-hidden">
+        <div className="px-6 py-4 bg-[#F9F9FB] dark:bg-slate-900/50 border-b border-[#E5E5EA] dark:border-slate-700/60 flex justify-between items-center">
+          <span className="flex items-center gap-2 text-sm font-semibold">
+            <Activity size={16} className="text-emerald-600" /> Riwayat Aktivitas
+          </span>
+          <Badge>{filteredLogs.length} Data</Badge>
+        </div>
 
-                  {/* Log Details Column */}
-                  <div className="flex-1 space-y-2">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className="font-medium text-slate-800 flex items-center gap-1">
-                        <User size={14} className="text-slate-400" /> {log.admin_name}
-                      </span>
-                      <span className="text-slate-300">melakukan</span>
-                      <Badge variant="outline" className={getActionColor(log.action)}>
-                        {log.action}
-                      </Badge>
-                    </div>
-                    
-                    <div className="bg-white border border-slate-100 rounded-lg p-3 shadow-sm text-sm">
-                      <p className="text-slate-700 font-medium mb-1 border-b border-slate-50 pb-1">
-                        Target: <span className="font-mono text-xs bg-slate-100 px-1 py-0.5 rounded text-slate-600">{log.target}</span>
+        {loading ? (
+          <div className="p-12 text-center text-sm text-[#86868B] animate-pulse">Menarik rekam jejak sistem...</div>
+        ) : filteredLogs.length === 0 ? (
+          <EmptyState
+            icon={ShieldCheck}
+            title="Log Kosong"
+            description="Belum ada rekaman aktivitas keamanan yang cocok."
+          />
+        ) : (
+          <>
+            <div className="divide-y divide-[#F2F2F7] dark:divide-slate-700/50">
+              {paginatedLogs.map((log) => {
+                const [datePart, timePart] = String(log.created_at || "").split(" ");
+                return (
+                  <div
+                    key={log.id}
+                    className="p-5 hover:bg-[#F9F9FB] dark:hover:bg-slate-700/25 transition-colors flex flex-col md:flex-row md:items-start gap-4"
+                  >
+                    <div className="md:w-44 shrink-0 space-y-1">
+                      <p className="font-semibold text-xs sm:text-sm flex items-center gap-1.5">
+                        <Clock size={13} className="text-emerald-600" /> {datePart || "-"}
                       </p>
-                      {log.details && (
-                        <div className="mt-2 text-xs text-slate-500 font-mono overflow-x-auto">
-                          <pre>{JSON.stringify(log.details, null, 2)}</pre>
-                        </div>
-                      )}
+                      <p className="text-xs text-[#86868B] dark:text-slate-400 pl-5">{timePart || ""}</p>
+                      <p className="text-[11px] text-[#86868B] dark:text-slate-400 flex items-center gap-1 font-mono bg-[#F5F5F7] dark:bg-slate-900/60 w-fit px-2 py-0.5 rounded-md mt-1">
+                        <Monitor size={10} /> {log.ip_address || "127.0.0.1"}
+                      </p>
+                    </div>
+
+                    <div className="flex-1 space-y-2 min-w-0">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="font-semibold text-sm flex items-center gap-1.5">
+                          <User size={13} className="text-[#86868B]" /> {log.admin_name}
+                        </span>
+                        <span className="text-xs text-[#86868B]">melakukan</span>
+                        <Badge variant={getActionVariant(log.action)}>{log.action}</Badge>
+                      </div>
+
+                      <div className="bg-[#F9F9FB] dark:bg-slate-900/60 border border-[#E5E5EA] dark:border-slate-700/60 rounded-xl p-3 text-xs">
+                        <p className="font-medium pb-1.5 border-b border-[#E5E5EA]/70 dark:border-slate-700/50">
+                          Target:{" "}
+                          <span className="font-mono bg-white dark:bg-slate-800 px-1.5 py-0.5 rounded border border-[#E5E5EA] dark:border-slate-700">
+                            {log.target}
+                          </span>
+                        </p>
+                        {log.details && (
+                          <div className="mt-2 text-[#86868B] dark:text-slate-300 font-mono overflow-x-auto">
+                            <pre className="whitespace-pre-wrap break-all">
+                              {JSON.stringify(log.details, null, 2)}
+                            </pre>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
-
-                </div>
-              ))}
+                );
+              })}
             </div>
-          ) : (
-            <div className="h-64 flex items-center justify-center">
-              <EmptyState 
-                title="Log Kosong" 
-                description="Belum ada rekaman aktivitas keamanan." 
-              />
-            </div>
-          )}
-        </CardContent>
+            <Pagination
+              currentPage={safePage}
+              lastPage={totalPages}
+              total={filteredLogs.length}
+              from={(safePage - 1) * itemsPerPage + 1}
+              to={Math.min(safePage * itemsPerPage, filteredLogs.length)}
+              onPageChange={setCurrentPage}
+              itemLabel="log"
+            />
+          </>
+        )}
       </Card>
     </div>
-  )
+  );
 }

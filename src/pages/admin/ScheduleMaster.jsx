@@ -1,407 +1,528 @@
-import { useState, useEffect } from "react"
-import Select from "react-select"
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../../components/ui/Card"
-import { Badge } from "../../components/ui/Badge"
-import { Button } from "../../components/ui/Button"
-import { Input } from "../../components/ui/Input"
-import { Clock, Plus, BookOpen, MapPin, Edit2, Trash2, Loader2 } from "lucide-react"
-import { scheduleService } from "../../services/schedule"
-import { masterDataService } from "../../services/masterData"
-import { useToast } from "../../contexts/ToastContext"
+import { useState, useEffect, useCallback } from "react";
+import Select from "react-select";
+import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/Card";
+import { Badge } from "../../components/ui/Badge";
+import { Button } from "../../components/ui/Button";
+import { Input } from "../../components/ui/Input";
+import { Modal } from "../../components/ui/Modal";
+import { PageHeader } from "../../components/ui/PageHeader";
+import {
+  Clock,
+  Plus,
+  BookOpen,
+  MapPin,
+  Edit2,
+  Trash2,
+  Loader2,
+  AlertTriangle,
+  CalendarDays,
+  User,
+} from "lucide-react";
+import { scheduleService } from "../../services/schedule";
+import { masterDataService } from "../../services/masterData";
+import { useToast } from "../../contexts/ToastContext";
+
+const DAYS = ["Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu", "Minggu"];
+
+const selectStyles = {
+  control: (base) => ({
+    ...base,
+    borderRadius: "0.75rem",
+    borderColor: "#E5E5EA",
+    minHeight: "2.625rem",
+    boxShadow: "none",
+    "&:hover": { borderColor: "#10B981" },
+  }),
+  menuPortal: (base) => ({ ...base, zIndex: 9999 }),
+};
 
 export default function ScheduleMaster() {
-  const { success, error } = useToast()
-  const [schedules, setSchedules] = useState({})
-  const [rooms, setRooms] = useState([])
-  const [faculties, setFaculties] = useState([])
-  const [courses, setCourses] = useState([])
-  const [activeAcademicYear, setActiveAcademicYear] = useState(null)
-  const [loading, setLoading] = useState(true)
-  
-  const days = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu']
+  const { success, error } = useToast();
+  const [schedules, setSchedules] = useState({});
+  const [rooms, setRooms] = useState([]);
+  const [faculties, setFaculties] = useState([]);
+  const [courses, setCourses] = useState([]);
+  const [activeAcademicYear, setActiveAcademicYear] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  // Modal state
-  const [isModalOpen, setIsModalOpen] = useState(false)
-  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
-  const [editingSchedule, setEditingSchedule] = useState(null)
-  const [deletingSchedule, setDeletingSchedule] = useState(null)
-  const [submitting, setSubmitting] = useState(false)
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [editingSchedule, setEditingSchedule] = useState(null);
+  const [deletingSchedule, setDeletingSchedule] = useState(null);
+  const [submitting, setSubmitting] = useState(false);
 
   const [formData, setFormData] = useState({
-    day_of_week: 'Senin',
-    course_id: '',
-    room_id: '',
-    start_time: '08:00',
-    end_time: '09:30',
-  })
-  
-  // Temporary states for form filtering
-  const [selectedFaculty, setSelectedFaculty] = useState('')
-  const [selectedSemester, setSelectedSemester] = useState('1')
+    day_of_week: "Senin",
+    course_id: "",
+    room_id: "",
+    start_time: "08:00",
+    end_time: "09:30",
+  });
 
-  const fetchData = async () => {
+  const [selectedFaculty, setSelectedFaculty] = useState("");
+  const [selectedSemester, setSelectedSemester] = useState("1");
+
+  const defaultSemesterForTerm = activeAcademicYear?.term === "Genap" ? "2" : "1";
+
+  const fetchData = useCallback(async () => {
     try {
-      setLoading(true)
+      setLoading(true);
       const [schedRes, roomRes, facRes, activeYearRes] = await Promise.all([
         scheduleService.getSchedules(),
         masterDataService.getRooms(),
         masterDataService.getFaculties(),
-        masterDataService.getActiveAcademicYear()
-      ])
-      if (schedRes.success) setSchedules(schedRes.data)
-      if (roomRes.success) setRooms(roomRes.data)
-      if (facRes.success) setFaculties(facRes.data)
-      if (activeYearRes && activeYearRes.success && activeYearRes.data) setActiveAcademicYear(activeYearRes.data)
-    } catch (err) {
-      console.error("Failed to load data", err)
+        masterDataService.getActiveAcademicYear(),
+      ]);
+      if (schedRes.success) setSchedules(schedRes.data || {});
+      if (roomRes.success) setRooms(roomRes.data || []);
+      if (facRes.success) setFaculties(facRes.data || []);
+      if (activeYearRes?.success && activeYearRes.data) {
+        setActiveAcademicYear(activeYearRes.data);
+      } else {
+        setActiveAcademicYear(null);
+      }
+    } catch {
+      error("Gagal memuat data jadwal mengajar.");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  }, [error]);
 
   useEffect(() => {
-    fetchData()
-  }, [])
+    fetchData();
+  }, [fetchData]);
 
   useEffect(() => {
     const fetchCourses = async () => {
       if (!selectedFaculty || !selectedSemester) {
-        setCourses([])
-        return
+        setCourses([]);
+        return;
       }
       try {
-        const res = await masterDataService.getCourses(selectedFaculty, selectedSemester)
-        if (res.success) setCourses(res.data)
-      } catch (err) {
-        console.error("Failed to load courses", err)
+        const res = await masterDataService.getCourses(selectedFaculty, selectedSemester);
+        if (res.success) setCourses(res.data || []);
+      } catch {
+        error("Gagal memuat daftar mata kuliah.");
       }
-    }
-    fetchCourses()
-  }, [selectedFaculty, selectedSemester])
+    };
+    fetchCourses();
+  }, [selectedFaculty, selectedSemester, error]);
 
   const handleOpenCreate = () => {
-    setEditingSchedule(null)
-    setFormData({ day_of_week: 'Senin', course_id: '', room_id: '', start_time: '08:00', end_time: '09:30' })
-    setSelectedFaculty('')
-    setSelectedSemester('1')
-    setIsModalOpen(true)
-  }
+    setEditingSchedule(null);
+    setFormData({
+      day_of_week: "Senin",
+      course_id: "",
+      room_id: "",
+      start_time: "08:00",
+      end_time: "09:30",
+    });
+    setSelectedFaculty("");
+    setSelectedSemester(defaultSemesterForTerm);
+    setIsModalOpen(true);
+  };
 
   const handleOpenEdit = (day, item) => {
-    setEditingSchedule({ ...item, oldDay: day })
+    setEditingSchedule({ ...item, oldDay: day });
     setFormData({
       day_of_week: item.day_of_week,
       course_id: item.course_id,
       room_id: item.room_id,
       start_time: item.start_time,
-      end_time: item.end_time
-    })
-    setSelectedFaculty('')
-    setSelectedSemester('1')
-    setIsModalOpen(true)
-  }
+      end_time: item.end_time,
+    });
+    setSelectedFaculty(item.faculty_id ? String(item.faculty_id) : "");
+    setSelectedSemester(item.semester ? String(item.semester) : defaultSemesterForTerm);
+    setIsModalOpen(true);
+  };
 
   const handleOpenDelete = (day, item) => {
-    setDeletingSchedule({ ...item, day })
-    setIsDeleteModalOpen(true)
-  }
+    setDeletingSchedule({ ...item, day });
+    setIsDeleteModalOpen(true);
+  };
 
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value })
-  }
+    setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+  };
 
   const handleSubmit = async (e) => {
-    e.preventDefault()
-    setSubmitting(true)
-    
+    e.preventDefault();
+    if (!formData.course_id) {
+      error("Pilih mata kuliah terlebih dahulu.");
+      return;
+    }
+
+    setSubmitting(true);
     try {
-      if (editingSchedule) {
-        const res = await scheduleService.updateSchedule(editingSchedule.id, formData)
-        if (res.success) {
-          await fetchData()
-          setIsModalOpen(false)
-          success("Jadwal berhasil diperbarui.")
-        }
-      } else {
-        const res = await scheduleService.createSchedule(formData)
-        if (res.success) {
-          await fetchData()
-          setIsModalOpen(false)
-          success("Jadwal berhasil ditambahkan.")
-        }
+      const res = editingSchedule
+        ? await scheduleService.updateSchedule(editingSchedule.id, formData)
+        : await scheduleService.createSchedule(formData);
+
+      if (res.success) {
+        await fetchData();
+        setIsModalOpen(false);
+        success(editingSchedule ? "Jadwal berhasil diperbarui." : "Jadwal berhasil ditambahkan.");
       }
     } catch (err) {
-      const msg = err?.response?.data?.message || "Terjadi kesalahan."
-      error(msg)
+      error(err?.response?.data?.message || "Terjadi kesalahan saat menyimpan jadwal.");
     } finally {
-      setSubmitting(false)
+      setSubmitting(false);
     }
-  }
+  };
 
   const handleDelete = async () => {
-    if (!deletingSchedule) return
-    setSubmitting(true)
-    
+    if (!deletingSchedule) return;
+    setSubmitting(true);
     try {
-      const res = await scheduleService.deleteSchedule(deletingSchedule.id)
+      const res = await scheduleService.deleteSchedule(deletingSchedule.id);
       if (res.success) {
-        await fetchData()
-        setIsDeleteModalOpen(false)
-        success("Jadwal berhasil dihapus.")
+        await fetchData();
+        setIsDeleteModalOpen(false);
+        success("Jadwal berhasil dihapus.");
       }
     } catch (err) {
-      error("Gagal menghapus.")
+      error(err?.response?.data?.message || "Gagal menghapus jadwal.");
     } finally {
-      setSubmitting(false)
+      setSubmitting(false);
     }
-  }
+  };
 
-  // Derived state for selected course to show lecturer
-  const selectedCourseObj = courses.find(c => String(c.id) === String(formData.course_id))
+  const selectedCourseObj = courses.find((c) => String(c.id) === String(formData.course_id));
+  const semesterOptions = activeAcademicYear?.term === "Ganjil" ? [1, 3, 5, 7] : [2, 4, 6, 8];
+
+  const courseOptions = [
+    ...courses.map((c) => ({ value: c.id, label: c.name })),
+    ...(editingSchedule &&
+    formData.course_id &&
+    !courses.some((c) => String(c.id) === String(formData.course_id))
+      ? [{ value: formData.course_id, label: `${editingSchedule.course_name} (Tersimpan)` }]
+      : []),
+  ];
+
+  const selectedCourseOption = formData.course_id
+    ? {
+        value: formData.course_id,
+        label:
+          selectedCourseObj?.name ||
+          (editingSchedule ? editingSchedule.course_name : "Mata Kuliah"),
+      }
+    : null;
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h2 className="text-2xl font-bold tracking-tight text-slate-800 flex items-center gap-2">
-            Jadwal Mengajar
-            {activeAcademicYear && (
-              <Badge variant="outline" className={activeAcademicYear.term === 'Ganjil' ? 'bg-amber-50 text-amber-700 border-amber-200' : 'bg-blue-50 text-blue-700 border-blue-200'}>
-                {activeAcademicYear.name} ({activeAcademicYear.term})
-              </Badge>
-            )}
-          </h2>
-          <p className="text-slate-500 mt-1">Kelola plotting jadwal dosen dan ruangan kelas.</p>
-        </div>
-        <Button onClick={handleOpenCreate} className="flex items-center gap-2" disabled={!activeAcademicYear}>
-          <Plus size={18} /> Tambah Jadwal
-        </Button>
-      </div>
+      <PageHeader
+        title="Jadwal Mengajar"
+        description="Kelola plotting jadwal perkuliahan dosen, waktu, dan penggunaan ruangan."
+        badge={
+          activeAcademicYear && (
+            <Badge variant={activeAcademicYear.term === "Ganjil" ? "warning" : "info"}>
+              {activeAcademicYear.name} ({activeAcademicYear.term})
+            </Badge>
+          )
+        }
+        actions={
+          <Button size="sm" onClick={handleOpenCreate} disabled={!activeAcademicYear}>
+            <Plus className="w-4 h-4" />
+            Tambah Jadwal
+          </Button>
+        }
+      />
 
       {!activeAcademicYear && !loading && (
-        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex gap-3 text-amber-700">
-          <BookOpen className="shrink-0" />
-          <p className="text-sm font-medium">Belum ada Tahun Akademik yang aktif. Silakan atur di menu <strong>Tahun Akademik</strong> terlebih dahulu agar dapat membuat jadwal.</p>
+        <div className="rounded-2xl border border-amber-200 dark:border-amber-800/50 bg-amber-50/80 dark:bg-amber-950/30 p-4 flex items-start gap-3 text-amber-800 dark:text-amber-300">
+          <AlertTriangle className="w-5 h-5 shrink-0 mt-0.5" />
+          <p className="text-xs sm:text-sm font-medium leading-relaxed">
+            Belum ada Tahun Akademik yang aktif. Silakan aktifkan salah satu periode di menu{" "}
+            <strong>Tahun Akademik</strong> terlebih dahulu sebelum membuat atau mengubah jadwal.
+          </p>
         </div>
       )}
 
-      <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-        {days.map((day) => (
-          <Card key={day} className="border-none shadow-sm flex flex-col">
-            <CardHeader className="bg-slate-50/50 pb-4 border-b border-slate-100">
-              <CardTitle className="text-lg flex justify-between items-center">
-                {day}
-                <Badge variant="outline" className="bg-white">{schedules[day]?.length || 0} Sesi</Badge>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-0 flex-1 flex flex-col">
-              {loading ? (
-                <div className="p-6 flex items-center justify-center text-slate-500">
-                  <Loader2 className="animate-spin mr-2" size={16} /> Memuat...
-                </div>
-              ) : schedules[day] && schedules[day].length > 0 ? (
-                <div className="divide-y divide-slate-100 flex-1">
-                  {schedules[day].map((item) => (
-                    <div key={item.id} className="p-4 hover:bg-slate-50 transition-colors group">
-                      <div className="flex justify-between items-start mb-2">
-                        <h4 className="font-semibold text-brand-700">{item.course_name}</h4>
-                        <span className="text-xs font-medium bg-brand-50 text-brand-600 px-2 py-1 rounded-full flex items-center gap-1">
-                          <Clock size={12}/> {item.start_time} - {item.end_time}
-                        </span>
-                      </div>
-                      <div className="space-y-1.5">
-                        <p className="text-sm text-slate-600 flex items-center gap-2">
-                          <BookOpen size={14} className="text-slate-400"/> Dosen: {item.lecturer_name}
-                        </p>
-                        <p className="text-sm text-slate-600 flex items-center gap-2">
-                          <MapPin size={14} className="text-slate-400"/> Ruang: {item.room_name}
-                        </p>
-                      </div>
-                      <div className="mt-3 opacity-0 group-hover:opacity-100 transition-opacity flex gap-2">
-                        <Button onClick={() => handleOpenEdit(day, item)} variant="outline" size="sm" className="w-full text-xs h-7">Edit Sesi</Button>
-                        <Button onClick={() => handleOpenDelete(day, item)} variant="outline" size="sm" className="w-full text-xs h-7 text-red-600 border-red-200 hover:bg-red-50">Hapus</Button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="p-8 text-center text-slate-400 text-sm flex-1 flex items-center justify-center border-2 border-dashed border-slate-100 m-4 rounded-xl">
-                  Tidak ada jadwal untuk hari {day}.
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-      
-      {/* Modal Form */}
-      {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
-          <Card className="w-full max-w-md shadow-xl">
-            <CardHeader>
-              <CardTitle>{editingSchedule ? 'Edit Jadwal' : 'Tambah Jadwal Baru'}</CardTitle>
-              <CardDescription>
-                Silakan isi formulir di bawah ini.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="space-y-1.5">
-                  <label className="text-sm font-medium text-slate-700">Hari</label>
-                  <select 
-                    name="day_of_week" 
-                    value={formData.day_of_week} 
-                    onChange={handleChange}
-                    className="flex h-10 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-500"
-                  >
-                    {days.map(d => <option key={d} value={d}>{d}</option>)}
-                  </select>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-1.5">
-                    <label className="text-sm font-medium text-slate-700">Fakultas / Prodi</label>
-                    <select 
-                      value={selectedFaculty}
-                      onChange={(e) => setSelectedFaculty(e.target.value)}
-                      className="flex h-10 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-500"
-                    >
-                      <option value="">Pilih Fakultas/Prodi</option>
-                      {faculties.map(f => (
-                        <option key={f.id} value={f.id}>{f.name}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className="space-y-1.5">
-                    <label className="text-sm font-medium text-slate-700">Semester</label>
-                    <select 
-                      value={selectedSemester}
-                      onChange={(e) => setSelectedSemester(e.target.value)}
-                      className="flex h-10 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-500"
-                    >
-                      {activeAcademicYear?.term === 'Ganjil' 
-                        ? [1,3,5,7].map(s => <option key={s} value={s}>Semester {s} (Ganjil)</option>)
-                        : [2,4,6,8].map(s => <option key={s} value={s}>Semester {s} (Genap)</option>)
-                      }
-                    </select>
-                  </div>
-                </div>
+      <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+        {DAYS.map((day) => {
+          const dayItems = schedules[day] || [];
+          return (
+            <Card key={day} className="flex flex-col overflow-hidden">
+              <CardHeader className="py-4 px-5 bg-[#F9F9FB] dark:bg-slate-900/50 border-b border-[#E5E5EA] dark:border-slate-700/60 flex-row items-center justify-between space-y-0">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <CalendarDays className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                  {day}
+                </CardTitle>
+                <Badge variant={dayItems.length > 0 ? "primary" : "default"}>
+                  {dayItems.length} Sesi
+                </Badge>
+              </CardHeader>
 
-                <div className="space-y-1.5">
-                  <label className="text-sm font-medium text-slate-700">Mata Kuliah</label>
-                  <Select
-                    options={[
-                      ...courses.map(c => ({ value: c.id, label: c.name })),
-                      ...(editingSchedule && formData.course_id && !courses.find(c => c.id === formData.course_id)
-                        ? [{ value: formData.course_id, label: editingSchedule.course_name + ' (Tersimpan)' }]
-                        : [])
-                    ]}
-                    value={formData.course_id ? {
-                      value: formData.course_id,
-                      label: courses.find(c => c.id == formData.course_id)?.name ||
-                        (editingSchedule ? editingSchedule.course_name : 'Mata Kuliah')
-                    } : null}
-                    onChange={(opt) => handleChange({ target: { name: 'course_id', value: opt ? opt.value : '' } })}
-                    placeholder={!selectedFaculty ? 'Pilih Fakultas Dulu' : courses.length === 0 ? 'Tidak Ada MK' : 'Pilih Mata Kuliah'}
-                    isDisabled={!selectedFaculty}
-                    isClearable
-                    required
-                    styles={{
-                      control: (base) => ({
-                        ...base,
-                        borderRadius: '0.375rem',
-                        borderColor: '#cbd5e1',
-                        minHeight: '2.5rem',
-                        boxShadow: 'none',
-                        '&:hover': { borderColor: '#94a3b8' }
-                      })
-                    }}
-                  />
-                </div>
-                
-                <div className="space-y-1.5 p-3 bg-slate-50 border border-slate-200 rounded-lg">
-                  <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Dosen Pengampu</label>
-                  <p className="font-medium text-slate-800">
-                    {selectedCourseObj ? selectedCourseObj.lecturer_name : (editingSchedule ? editingSchedule.lecturer_name : 'Pilih mata kuliah')}
-                  </p>
-                  <p className="text-xs text-slate-500 mt-1">Dosen otomatis diambil dari Master Mata Kuliah.</p>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-1.5">
-                    <label className="text-sm font-medium text-slate-700">Jam Mulai</label>
-                    <Input 
-                      type="time" 
-                      name="start_time" 
-                      value={formData.start_time} 
-                      onChange={handleChange} 
-                      required 
-                    />
+              <CardContent className="p-0 flex-1 flex flex-col">
+                {loading ? (
+                  <div className="p-8 flex items-center justify-center text-xs text-[#86868B] gap-2">
+                    <Loader2 className="w-4 h-4 animate-spin text-emerald-600" />
+                    Memuat jadwal...
                   </div>
-                  <div className="space-y-1.5">
-                    <label className="text-sm font-medium text-slate-700">Jam Selesai</label>
-                    <Input 
-                      type="time" 
-                      name="end_time" 
-                      value={formData.end_time} 
-                      onChange={handleChange} 
-                      required 
-                    />
-                  </div>
-                </div>
+                ) : dayItems.length > 0 ? (
+                  <div className="divide-y divide-[#F2F2F7] dark:divide-slate-700/50 flex-1">
+                    {dayItems.map((item) => (
+                      <div
+                        key={item.id}
+                        className="p-4 sm:p-5 hover:bg-[#F9F9FB] dark:hover:bg-slate-800/70 transition-colors"
+                      >
+                        <div className="flex items-start justify-between gap-2 mb-2.5">
+                          <h4 className="font-semibold text-sm text-[#1D1D1F] dark:text-slate-100 leading-snug">
+                            {item.course_name}
+                          </h4>
+                          <span className="shrink-0 inline-flex items-center gap-1 text-[11px] font-semibold bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border border-emerald-200/70 dark:border-emerald-800/50 px-2.5 py-0.5 rounded-full">
+                            <Clock className="w-3 h-3" />
+                            {item.start_time} - {item.end_time}
+                          </span>
+                        </div>
 
-                <div className="space-y-1.5">
-                  <label className="text-sm font-medium text-slate-700">Ruangan</label>
-                  <select 
-                    name="room_id" 
-                    value={formData.room_id} 
-                    onChange={handleChange} 
-                    required
-                    className="flex h-10 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-brand-500"
-                  >
-                    <option value="" disabled>Pilih Ruangan</option>
-                    {rooms.map(r => (
-                      <option key={r.id} value={r.id}>{r.name}</option>
+                        <div className="space-y-1.5 text-xs text-[#86868B] dark:text-slate-400">
+                          <p className="flex items-center gap-2">
+                            <User className="w-3.5 h-3.5 shrink-0" />
+                            <span className="truncate text-[#1D1D1F]/80 dark:text-slate-300 font-medium">
+                              {item.lecturer_name}
+                            </span>
+                          </p>
+                          <p className="flex items-center gap-2">
+                            <MapPin className="w-3.5 h-3.5 shrink-0" />
+                            <span className="truncate text-[#1D1D1F]/80 dark:text-slate-300">
+                              {item.room_name}
+                            </span>
+                          </p>
+                        </div>
+
+                        <div className="mt-3.5 flex items-center gap-2">
+                          <Button
+                            onClick={() => handleOpenEdit(day, item)}
+                            variant="outline"
+                            size="sm"
+                            className="flex-1 h-8 text-xs"
+                          >
+                            <Edit2 className="w-3 h-3" /> Edit
+                          </Button>
+                          <Button
+                            onClick={() => handleOpenDelete(day, item)}
+                            variant="outline"
+                            size="sm"
+                            className="flex-1 h-8 text-xs text-red-600 dark:text-red-400 border-red-200 dark:border-red-900/50 hover:bg-red-50 dark:hover:bg-red-950/40"
+                          >
+                            <Trash2 className="w-3 h-3" /> Hapus
+                          </Button>
+                        </div>
+                      </div>
                     ))}
-                  </select>
-                </div>
-                
-                <div className="flex gap-3 pt-4">
-                  <Button type="button" variant="outline" className="w-full" onClick={() => setIsModalOpen(false)}>
-                    Batal
-                  </Button>
-                  <Button type="submit" disabled={submitting} className="w-full">
-                    {submitting ? 'Memproses...' : (editingSchedule ? 'Simpan' : 'Tambah')}
-                  </Button>
-                </div>
-              </form>
-            </CardContent>
-          </Card>
-        </div>
-      )}
-      
-      {/* Delete Modal */}
-      {isDeleteModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
-          <Card className="w-full max-w-sm shadow-xl">
-            <CardHeader>
-              <CardTitle>Konfirmasi Hapus</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-slate-600 mb-6">
-                Apakah Anda yakin ingin menghapus jadwal <strong>{deletingSchedule?.course_name}</strong>? Tindakan ini tidak dapat dibatalkan.
-              </p>
-              <div className="flex gap-3">
-                <Button type="button" variant="outline" className="w-full" onClick={() => setIsDeleteModalOpen(false)}>
-                  Batal
-                </Button>
-                <Button type="button" onClick={handleDelete} disabled={submitting} className="w-full bg-red-600 hover:bg-red-700 text-white">
-                  {submitting ? 'Menghapus...' : 'Ya, Hapus'}
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
+                  </div>
+                ) : (
+                  <div className="m-4 p-8 flex-1 flex items-center justify-center rounded-xl border border-dashed border-[#E5E5EA] dark:border-slate-700/70 text-center text-xs text-[#86868B] dark:text-slate-400">
+                    Tidak ada jadwal untuk hari {day}.
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          );
+        })}
+      </div>
+
+      {/* Create / Edit Modal */}
+      <Modal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        title={editingSchedule ? "Edit Jadwal Mengajar" : "Tambah Jadwal Mengajar"}
+        subtitle="Pilih hari, filter mata kuliah, jam perkuliahan, dan ruangan."
+        icon={CalendarDays}
+        size="md"
+        footer={
+          <>
+            <Button type="button" variant="outline" onClick={() => setIsModalOpen(false)} disabled={submitting}>
+              Batal
+            </Button>
+            <Button type="submit" form="scheduleForm" isLoading={submitting}>
+              {editingSchedule ? "Simpan Perubahan" : "Tambah Jadwal"}
+            </Button>
+          </>
+        }
+      >
+        <form id="scheduleForm" onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-1.5">
+            <label className="text-xs font-semibold text-[#1D1D1F] dark:text-slate-200">Hari</label>
+            <select
+              name="day_of_week"
+              value={formData.day_of_week}
+              onChange={handleChange}
+              className="flex h-10 sm:h-11 w-full rounded-xl border border-[#E5E5EA] dark:border-slate-700/70 bg-white dark:bg-slate-900/70 px-3.5 text-sm text-[#1D1D1F] dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500/35 focus:border-emerald-500"
+            >
+              {DAYS.map((d) => (
+                <option key={d} value={d}>
+                  {d}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-[#1D1D1F] dark:text-slate-200">
+                Filter Fakultas / Prodi
+              </label>
+              <select
+                value={selectedFaculty}
+                onChange={(e) => setSelectedFaculty(e.target.value)}
+                className="flex h-10 sm:h-11 w-full rounded-xl border border-[#E5E5EA] dark:border-slate-700/70 bg-white dark:bg-slate-900/70 px-3 text-sm text-[#1D1D1F] dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500/35 focus:border-emerald-500"
+              >
+                <option value="">Pilih Fakultas / Prodi</option>
+                {faculties.map((f) => (
+                  <option key={f.id} value={f.id}>
+                    {f.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-[#1D1D1F] dark:text-slate-200">
+                Semester ({activeAcademicYear?.term || "Aktif"})
+              </label>
+              <select
+                value={selectedSemester}
+                onChange={(e) => setSelectedSemester(e.target.value)}
+                className="flex h-10 sm:h-11 w-full rounded-xl border border-[#E5E5EA] dark:border-slate-700/70 bg-white dark:bg-slate-900/70 px-3 text-sm text-[#1D1D1F] dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500/35 focus:border-emerald-500"
+              >
+                {semesterOptions.map((s) => (
+                  <option key={s} value={s}>
+                    Semester {s} ({activeAcademicYear?.term || "Aktif"})
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-xs font-semibold text-[#1D1D1F] dark:text-slate-200">
+              Mata Kuliah <span className="text-red-500">*</span>
+            </label>
+            <Select
+              options={courseOptions}
+              value={selectedCourseOption}
+              onChange={(opt) =>
+                handleChange({ target: { name: "course_id", value: opt ? opt.value : "" } })
+              }
+              placeholder={
+                !selectedFaculty
+                  ? editingSchedule
+                    ? "Pilih Fakultas untuk mengganti MK..."
+                    : "Pilih Fakultas terlebih dahulu..."
+                  : courses.length === 0
+                  ? "Tidak ada mata kuliah ditemukan"
+                  : "Cari & pilih mata kuliah..."
+              }
+              isDisabled={!selectedFaculty && !editingSchedule}
+              isClearable
+              isSearchable
+              menuPortalTarget={typeof document !== "undefined" ? document.body : null}
+              styles={selectStyles}
+              className="text-sm text-[#1D1D1F]"
+            />
+          </div>
+
+          <div className="rounded-xl border border-[#E5E5EA] dark:border-slate-700/60 bg-[#F9F9FB] dark:bg-slate-900/50 p-3.5 space-y-1">
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-[#86868B] dark:text-slate-400 flex items-center gap-1.5">
+              <BookOpen className="w-3.5 h-3.5" /> Dosen Pengampu
+            </span>
+            <p className="text-sm font-semibold text-[#1D1D1F] dark:text-slate-100">
+              {selectedCourseObj
+                ? selectedCourseObj.lecturer_name || "Belum ada dosen pengampu"
+                : editingSchedule
+                ? editingSchedule.lecturer_name || "-"
+                : "Pilih mata kuliah di atas"}
+            </p>
+            <p className="text-[11px] text-[#86868B] dark:text-slate-400">
+              Otomatis tersinkron dari data Master Mata Kuliah.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-[#1D1D1F] dark:text-slate-200">
+                Jam Mulai <span className="text-red-500">*</span>
+              </label>
+              <Input
+                type="time"
+                name="start_time"
+                value={formData.start_time}
+                onChange={handleChange}
+                required
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-[#1D1D1F] dark:text-slate-200">
+                Jam Selesai <span className="text-red-500">*</span>
+              </label>
+              <Input
+                type="time"
+                name="end_time"
+                value={formData.end_time}
+                onChange={handleChange}
+                required
+              />
+            </div>
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-xs font-semibold text-[#1D1D1F] dark:text-slate-200">
+              Ruangan <span className="text-red-500">*</span>
+            </label>
+            <select
+              name="room_id"
+              value={formData.room_id}
+              onChange={handleChange}
+              required
+              className="flex h-10 sm:h-11 w-full rounded-xl border border-[#E5E5EA] dark:border-slate-700/70 bg-white dark:bg-slate-900/70 px-3.5 text-sm text-[#1D1D1F] dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500/35 focus:border-emerald-500"
+            >
+              <option value="" disabled>
+                Pilih Ruangan...
+              </option>
+              {rooms.map((r) => (
+                <option key={r.id} value={r.id}>
+                  {r.name}
+                </option>
+              ))}
+            </select>
+          </div>
+        </form>
+      </Modal>
+
+      {/* Delete Confirmation Modal */}
+      <Modal
+        isOpen={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+        title="Hapus Jadwal"
+        icon={AlertTriangle}
+        size="sm"
+        footer={
+          <>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setIsDeleteModalOpen(false)}
+              disabled={submitting}
+            >
+              Batal
+            </Button>
+            <Button type="button" variant="danger" onClick={handleDelete} isLoading={submitting}>
+              Ya, Hapus Jadwal
+            </Button>
+          </>
+        }
+      >
+        <p className="text-sm text-[#86868B] dark:text-slate-400">
+          Apakah Anda yakin ingin menghapus sesi jadwal{" "}
+          <span className="font-semibold text-[#1D1D1F] dark:text-slate-100">
+            {deletingSchedule?.course_name}
+          </span>{" "}
+          pada hari {deletingSchedule?.day}? Tindakan ini tidak dapat dibatalkan.
+        </p>
+      </Modal>
     </div>
-  )
+  );
 }

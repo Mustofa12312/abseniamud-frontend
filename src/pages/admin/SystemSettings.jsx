@@ -1,297 +1,369 @@
-import { useState, useEffect } from "react"
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../../components/ui/Card"
-import { Button } from "../../components/ui/Button"
-import { Input } from "../../components/ui/Input"
-import { Settings, Save, Clock, Map, Building2 } from "lucide-react"
-import { adminService } from "../../services/admin"
-import { authService } from "../../services/auth"
-import { useToast } from "../../contexts/ToastContext"
-import { Lock } from "lucide-react"
+import { useState, useEffect } from "react";
+import { Settings, Save, Clock, Map, Building2, Lock } from "lucide-react";
+import { Card, CardContent } from "../../components/ui/Card";
+import { Button } from "../../components/ui/Button";
+import { Input } from "../../components/ui/Input";
+import { PageHeader } from "../../components/ui/PageHeader";
+import { adminService } from "../../services/admin";
+import { authService } from "../../services/auth";
+import { useToast } from "../../contexts/ToastContext";
 
 export default function SystemSettings() {
-  const { success, error } = useToast()
-  const [loading, setLoading] = useState(true)
-  const [saving, setSaving] = useState(false)
-  const [savingPassword, setSavingPassword] = useState(false)
-  
+  const { success, error } = useToast();
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [savingPassword, setSavingPassword] = useState(false);
+
   const [formData, setFormData] = useState({
-    app_name: 'IAIMU Attendance',
-    default_checkin_time: '07:00',
-    staff_checkin_time: '07:30',
-    late_tolerance_minutes: '15',
-    default_radius_meters: '50'
-  })
+    app_name: "IAIMU Attendance",
+    default_checkin_time: "07:00",
+    default_checkout_time: "16:00",
+    staff_checkin_time: "07:30",
+    staff_include_saturday: false,
+    late_tolerance_minutes: "15",
+    default_radius_meters: "50",
+  });
 
   const [passwordData, setPasswordData] = useState({
-    current_password: '',
-    new_password: '',
-    new_password_confirmation: ''
-  })
+    current_password: "",
+    new_password: "",
+    new_password_confirmation: "",
+  });
 
   useEffect(() => {
-    const fetchSettings = async () => {
-      try {
-        const res = await adminService.getSettings()
-        if (res.success && res.data) {
+    let cancelled = false;
+    adminService
+      .getSettings()
+      .then((res) => {
+        if (!cancelled && res.success && res.data) {
+          const sat = res.data.staff_include_saturday;
           setFormData({
-            app_name: res.data.app_name || 'IAIMU Attendance',
-            default_checkin_time: res.data.default_checkin_time || '07:00',
-            staff_checkin_time: res.data.staff_checkin_time || '07:30',
-            late_tolerance_minutes: res.data.late_tolerance_minutes || '15',
-            default_radius_meters: res.data.default_radius_meters || '50'
-          })
+            app_name: res.data.app_name || "IAIMU Attendance",
+            default_checkin_time: res.data.default_checkin_time || "07:00",
+            default_checkout_time: res.data.default_checkout_time || "16:00",
+            staff_checkin_time: res.data.staff_checkin_time || "07:30",
+            staff_include_saturday: sat === true || sat === 1 || sat === "1" || sat === "true",
+            late_tolerance_minutes: String(res.data.late_tolerance_minutes ?? "15"),
+            default_radius_meters: String(res.data.default_radius_meters ?? "50"),
+          });
         }
-      } catch (err) {
-        console.error("Gagal mengambil pengaturan", err)
-      } finally {
-        setLoading(false)
-      }
-    }
-    fetchSettings()
-  }, [])
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value })
-  }
+    const { name, type, checked, value } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: type === "checkbox" ? checked : value,
+    }));
+  };
 
   const handlePasswordChange = (e) => {
-    setPasswordData({ ...passwordData, [e.target.name]: e.target.value })
-  }
+    setPasswordData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+  };
 
   const handleSubmit = async (e) => {
-    e.preventDefault()
-    setSaving(true)
+    e.preventDefault();
+    setSaving(true);
     try {
-      const res = await adminService.updateSettings(formData)
+      const payload = {
+        ...formData,
+        staff_include_saturday: formData.staff_include_saturday ? "1" : "0",
+      };
+      const res = await adminService.updateSettings(payload);
       if (res.success) {
-        success(res.message || "Pengaturan berhasil disimpan.")
+        success(res.message || "Pengaturan berhasil disimpan.");
       }
     } catch (err) {
-      error(err.response?.data?.message || 'Gagal menyimpan pengaturan.')
+      error(err.response?.data?.message || "Gagal menyimpan pengaturan.");
     } finally {
-      setSaving(false)
+      setSaving(false);
     }
-  }
+  };
 
   const handleSubmitPassword = async (e) => {
-    e.preventDefault()
+    e.preventDefault();
     if (passwordData.new_password !== passwordData.new_password_confirmation) {
-      error("Password baru dan konfirmasi tidak cocok.")
-      return
+      error("Kata sandi baru dan konfirmasi tidak cocok.");
+      return;
     }
-    setSavingPassword(true)
+    setSavingPassword(true);
     try {
       const res = await authService.updateProfile({
         current_password: passwordData.current_password,
-        new_password: passwordData.new_password
-      })
+        new_password: passwordData.new_password,
+        new_password_confirmation: passwordData.new_password_confirmation,
+      });
       if (res.success) {
-        success("Password berhasil diubah.")
-        setPasswordData({ current_password: '', new_password: '', new_password_confirmation: '' })
+        success("Kata sandi berhasil diubah.");
+        setPasswordData({ current_password: "", new_password: "", new_password_confirmation: "" });
       }
     } catch (err) {
-      error(err.response?.data?.message || 'Gagal mengubah password.')
+      error(err.response?.data?.message || "Gagal mengubah kata sandi.");
     } finally {
-      setSavingPassword(false)
+      setSavingPassword(false);
     }
-  }
+  };
 
   if (loading) {
-    return <div className="p-12 text-center text-slate-500 animate-pulse">Memuat pengaturan...</div>
+    return (
+      <div className="space-y-4 max-w-4xl">
+        {[1, 2, 3].map((i) => (
+          <Card key={i} className="animate-pulse h-36" />
+        ))}
+      </div>
+    );
   }
 
   return (
     <div className="space-y-6 max-w-4xl">
-      <div>
-        <h2 className="text-2xl font-bold tracking-tight text-slate-800 flex items-center gap-2">
-          <Settings className="text-slate-500" /> Pengaturan Sistem
-        </h2>
-        <p className="text-slate-500 mt-1">Konfigurasi parameter global yang akan berlaku untuk seluruh pengguna sistem.</p>
-      </div>
+      <PageHeader
+        title="Pengaturan Sistem"
+        description="Konfigurasi parameter global yang berlaku untuk seluruh civitas dan perangkat."
+      />
 
-      <form onSubmit={handleSubmit} className="space-y-6">
+      <form onSubmit={handleSubmit} className="space-y-5">
         {/* Identitas Aplikasi */}
-        <Card className="border-none shadow-sm overflow-hidden">
-          <div className="bg-brand-50/50 p-4 border-b border-brand-100 flex items-center gap-3">
-            <div className="p-2 bg-brand-100 text-brand-600 rounded-lg">
-              <Building2 size={20} />
+        <Card className="overflow-hidden">
+          <div className="px-6 py-4 bg-[#F9F9FB] dark:bg-slate-900/50 border-b border-[#E5E5EA] dark:border-slate-700/60 flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 flex items-center justify-center">
+              <Building2 size={18} />
             </div>
             <div>
-              <h3 className="font-semibold text-brand-900">Identitas Aplikasi</h3>
-              <p className="text-xs text-brand-600">Pengaturan nama dan profil utama sistem</p>
+              <h3 className="font-semibold text-sm">Identitas Aplikasi</h3>
+              <p className="text-xs text-[#86868B] dark:text-slate-400">Pengaturan nama utama sistem presensi</p>
             </div>
           </div>
-          <CardContent className="p-6">
-            <div className="grid gap-4 max-w-xl">
-              <div className="space-y-1.5">
-                <label className="text-sm font-medium text-slate-700">Nama Aplikasi</label>
-                <Input 
-                  name="app_name" 
-                  value={formData.app_name} 
-                  onChange={handleChange} 
-                  placeholder="Misal: IAIMU Attendance"
-                />
-              </div>
+          <CardContent className="p-6 pt-6">
+            <div className="max-w-md space-y-1.5">
+              <label className="text-xs font-semibold">Nama Aplikasi</label>
+              <Input
+                name="app_name"
+                value={formData.app_name}
+                onChange={handleChange}
+                placeholder="Misal: IAIMU Attendance"
+              />
             </div>
           </CardContent>
         </Card>
 
         {/* Aturan Waktu Absensi */}
-        <Card className="border-none shadow-sm overflow-hidden">
-          <div className="bg-amber-50/50 p-4 border-b border-amber-100 flex items-center gap-3">
-            <div className="p-2 bg-amber-100 text-amber-600 rounded-lg">
-              <Clock size={20} />
+        <Card className="overflow-hidden">
+          <div className="px-6 py-4 bg-[#F9F9FB] dark:bg-slate-900/50 border-b border-[#E5E5EA] dark:border-slate-700/60 flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 flex items-center justify-center">
+              <Clock size={18} />
             </div>
             <div>
-              <h3 className="font-semibold text-amber-900">Aturan Waktu Absensi</h3>
-              <p className="text-xs text-amber-600">Jam kerja dan batas toleransi keterlambatan</p>
+              <h3 className="font-semibold text-sm">Aturan Waktu & Hari Kerja</h3>
+              <p className="text-xs text-[#86868B] dark:text-slate-400">
+                Jam masuk, jam pulang, toleransi keterlambatan, dan hari kerja Tendik
+              </p>
             </div>
           </div>
-          <CardContent className="p-6">
-            <div className="grid gap-6 md:grid-cols-2 max-w-2xl">
+          <CardContent className="p-6 pt-6 space-y-5">
+            <div className="grid gap-5 md:grid-cols-2 max-w-2xl">
               <div className="space-y-1.5">
-                <label className="text-sm font-medium text-slate-700">Jam Check-in Standar <span className="text-xs text-slate-400">(Dosen)</span></label>
+                <label className="text-xs font-semibold">Jam Check-in Standar (Dosen)</label>
                 <div className="flex gap-2 items-center">
-                  <Input 
-                    type="time" 
-                    name="default_checkin_time" 
-                    value={formData.default_checkin_time} 
-                    onChange={handleChange} 
+                  <Input
+                    type="time"
+                    name="default_checkin_time"
+                    value={formData.default_checkin_time}
+                    onChange={handleChange}
                   />
-                  <span className="text-sm text-slate-400">WIB</span>
+                  <span className="text-xs font-medium text-[#86868B]">WIB</span>
                 </div>
-                <p className="text-xs text-slate-500 mt-1">Dosen yang tidak memiliki jadwal spesifik akan merujuk ke jam ini.</p>
+                <p className="text-[11px] text-[#86868B] dark:text-slate-400">
+                  Rujukan dosen yang belum memiliki jadwal kelas spesifik.
+                </p>
               </div>
+
               <div className="space-y-1.5">
-                <label className="text-sm font-medium text-slate-700">Jam Check-in Tendik <span className="text-xs text-slate-400">(Wajib Harian)</span></label>
+                <label className="text-xs font-semibold">Jam Check-out Default</label>
                 <div className="flex gap-2 items-center">
-                  <Input 
-                    type="time" 
-                    name="staff_checkin_time" 
-                    value={formData.staff_checkin_time} 
-                    onChange={handleChange} 
+                  <Input
+                    type="time"
+                    name="default_checkout_time"
+                    value={formData.default_checkout_time}
+                    onChange={handleChange}
                   />
-                  <span className="text-sm text-slate-400">WIB</span>
+                  <span className="text-xs font-medium text-[#86868B]">WIB</span>
                 </div>
-                <p className="text-xs text-slate-500 mt-1">Berlaku untuk Tendik dan jabatan struktural (Kaprodi, dll).</p>
+                <p className="text-[11px] text-[#86868B] dark:text-slate-400">
+                  Waktu standar selesai jam kerja apabila tidak terikat jadwal akhir kelas.
+                </p>
               </div>
+
               <div className="space-y-1.5">
-                <label className="text-sm font-medium text-slate-700">Toleransi Keterlambatan</label>
+                <label className="text-xs font-semibold">Jam Check-in Tendik (Harian)</label>
                 <div className="flex gap-2 items-center">
-                  <Input 
-                    type="number" 
-                    name="late_tolerance_minutes" 
-                    value={formData.late_tolerance_minutes} 
-                    onChange={handleChange} 
+                  <Input
+                    type="time"
+                    name="staff_checkin_time"
+                    value={formData.staff_checkin_time}
+                    onChange={handleChange}
+                  />
+                  <span className="text-xs font-medium text-[#86868B]">WIB</span>
+                </div>
+                <p className="text-[11px] text-[#86868B] dark:text-slate-400">
+                  Berlaku untuk Tendik & jabatan struktural wajib hadir harian.
+                </p>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold">Toleransi Keterlambatan</label>
+                <div className="flex gap-2 items-center">
+                  <Input
+                    type="number"
+                    name="late_tolerance_minutes"
+                    value={formData.late_tolerance_minutes}
+                    onChange={handleChange}
                     min="0"
-                    className="w-24"
+                    className="w-28"
                   />
-                  <span className="text-sm text-slate-500 font-medium">Menit</span>
+                  <span className="text-xs font-medium text-[#86868B]">Menit</span>
                 </div>
-                <p className="text-xs text-slate-500 mt-1">Lebih dari batas ini akan dihitung sebagai "Terlambat".</p>
+                <p className="text-[11px] text-[#86868B] dark:text-slate-400">
+                  Melewati batas ini otomatis berstatus Terlambat.
+                </p>
               </div>
             </div>
+
+            <label className="flex items-start gap-3 p-3.5 rounded-xl bg-[#F9F9FB] dark:bg-slate-900/50 border border-[#E5E5EA] dark:border-slate-700/60 max-w-2xl cursor-pointer">
+              <input
+                type="checkbox"
+                name="staff_include_saturday"
+                checked={formData.staff_include_saturday}
+                onChange={handleChange}
+                className="mt-0.5 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 h-4 w-4"
+              />
+              <div>
+                <p className="text-xs font-semibold">Sertakan Hari Sabtu sebagai Hari Kerja Tendik</p>
+                <p className="text-[11px] text-[#86868B] dark:text-slate-400 mt-0.5">
+                  Jika dicentang, ketidakhadiran Tendik di hari Sabtu ikut dihitung dalam rekap alpa.
+                </p>
+              </div>
+            </label>
           </CardContent>
         </Card>
 
         {/* Aturan Geofence */}
-        <Card className="border-none shadow-sm overflow-hidden">
-          <div className="bg-emerald-50/50 p-4 border-b border-emerald-100 flex items-center gap-3">
-            <div className="p-2 bg-emerald-100 text-emerald-600 rounded-lg">
-              <Map size={20} />
+        <Card className="overflow-hidden">
+          <div className="px-6 py-4 bg-[#F9F9FB] dark:bg-slate-900/50 border-b border-[#E5E5EA] dark:border-slate-700/60 flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+              <Map size={18} />
             </div>
             <div>
-              <h3 className="font-semibold text-emerald-900">Pengaturan Lokasi GPS</h3>
-              <p className="text-xs text-emerald-600">Parameter untuk pembatasan jangkauan presensi (*Geofencing*)</p>
+              <h3 className="font-semibold text-sm">Pengaturan Lokasi GPS (Geofencing)</h3>
+              <p className="text-xs text-[#86868B] dark:text-slate-400">
+                Parameter jangkauan radius bawaan untuk titik lokasi kampus
+              </p>
             </div>
           </div>
-          <CardContent className="p-6">
-            <div className="grid gap-4 max-w-xl">
-              <div className="space-y-1.5">
-                <label className="text-sm font-medium text-slate-700">Radius Bawaan (Default Radius)</label>
-                <div className="flex gap-2 items-center">
-                  <Input 
-                    type="number" 
-                    name="default_radius_meters" 
-                    value={formData.default_radius_meters} 
-                    onChange={handleChange} 
-                    min="10"
-                    className="w-32"
-                  />
-                  <span className="text-sm text-slate-500 font-medium">Meter</span>
-                </div>
-                <p className="text-xs text-slate-500 mt-1">Akan digunakan jika lokasi tidak memiliki aturan radius spesifik.</p>
+          <CardContent className="p-6 pt-6">
+            <div className="max-w-xs space-y-1.5">
+              <label className="text-xs font-semibold">Radius Bawaan</label>
+              <div className="flex gap-2 items-center">
+                <Input
+                  type="number"
+                  name="default_radius_meters"
+                  value={formData.default_radius_meters}
+                  onChange={handleChange}
+                  min="10"
+                  className="w-32"
+                />
+                <span className="text-xs font-medium text-[#86868B]">Meter</span>
               </div>
+              <p className="text-[11px] text-[#86868B] dark:text-slate-400">
+                Digunakan bila titik lokasi belum menetapkan radius khusus.
+              </p>
             </div>
           </CardContent>
         </Card>
 
-        <div className="flex justify-end border-t border-slate-200 pt-6">
-          <Button type="submit" disabled={saving} className="px-8 flex items-center gap-2">
-            <Save size={16} />
-            {saving ? 'Menyimpan...' : 'Simpan Pengaturan'}
+        <div className="flex justify-end">
+          <Button type="submit" isLoading={saving} className="px-6">
+            {!saving && <Save size={15} />}
+            {saving ? "Menyimpan..." : "Simpan Pengaturan Sistem"}
           </Button>
         </div>
       </form>
 
-      <form onSubmit={handleSubmitPassword} className="space-y-6 mt-12">
-        {/* Keamanan Akun */}
-        <Card className="border-none shadow-sm overflow-hidden">
-          <div className="bg-rose-50/50 p-4 border-b border-rose-100 flex items-center gap-3">
-            <div className="p-2 bg-rose-100 text-rose-600 rounded-lg">
-              <Lock size={20} />
+      {/* Ubah Kata Sandi Akun Admin */}
+      <form onSubmit={handleSubmitPassword} className="pt-2">
+        <Card className="overflow-hidden">
+          <div className="px-6 py-4 bg-[#F9F9FB] dark:bg-slate-900/50 border-b border-[#E5E5EA] dark:border-slate-700/60 flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 flex items-center justify-center">
+              <Lock size={18} />
             </div>
             <div>
-              <h3 className="font-semibold text-rose-900">Ubah Password Akun</h3>
-              <p className="text-xs text-rose-600">Perbarui kata sandi untuk akun administrator ini</p>
+              <h3 className="font-semibold text-sm">Ubah Kata Sandi Akun</h3>
+              <p className="text-xs text-[#86868B] dark:text-slate-400">
+                Perbarui kata sandi masuk untuk akun administrator ini
+              </p>
             </div>
           </div>
-          <CardContent className="p-6">
-            <div className="grid gap-4 max-w-xl">
+          <CardContent className="p-6 pt-6 space-y-4">
+            <div className="grid gap-4 max-w-md">
               <div className="space-y-1.5">
-                <label className="text-sm font-medium text-slate-700">Password Saat Ini <span className="text-red-500">*</span></label>
-                <Input 
+                <label className="text-xs font-semibold">
+                  Kata Sandi Saat Ini <span className="text-rose-500">*</span>
+                </label>
+                <Input
                   type="password"
-                  name="current_password" 
-                  value={passwordData.current_password} 
-                  onChange={handlePasswordChange} 
-                  placeholder="Masukkan password Anda saat ini"
+                  name="current_password"
+                  value={passwordData.current_password}
+                  onChange={handlePasswordChange}
+                  placeholder="Masukkan kata sandi saat ini"
                   required
                 />
               </div>
               <div className="space-y-1.5">
-                <label className="text-sm font-medium text-slate-700">Password Baru <span className="text-red-500">*</span></label>
-                <Input 
+                <label className="text-xs font-semibold">
+                  Kata Sandi Baru <span className="text-rose-500">*</span>
+                </label>
+                <Input
                   type="password"
-                  name="new_password" 
-                  value={passwordData.new_password} 
-                  onChange={handlePasswordChange} 
+                  name="new_password"
+                  value={passwordData.new_password}
+                  onChange={handlePasswordChange}
                   placeholder="Minimal 6 karakter"
+                  minLength={6}
                   required
                 />
               </div>
               <div className="space-y-1.5">
-                <label className="text-sm font-medium text-slate-700">Konfirmasi Password Baru <span className="text-red-500">*</span></label>
-                <Input 
+                <label className="text-xs font-semibold">
+                  Konfirmasi Kata Sandi Baru <span className="text-rose-500">*</span>
+                </label>
+                <Input
                   type="password"
-                  name="new_password_confirmation" 
-                  value={passwordData.new_password_confirmation} 
-                  onChange={handlePasswordChange} 
-                  placeholder="Ketik ulang password baru"
+                  name="new_password_confirmation"
+                  value={passwordData.new_password_confirmation}
+                  onChange={handlePasswordChange}
+                  placeholder="Ketik ulang kata sandi baru"
+                  minLength={6}
                   required
                 />
               </div>
+            </div>
+
+            <div className="flex justify-end pt-2 border-t border-[#F2F2F7] dark:border-slate-700/60">
+              <Button type="submit" variant="danger" isLoading={savingPassword}>
+                {!savingPassword && <Settings size={15} />}
+                {savingPassword ? "Memperbarui..." : "Perbarui Kata Sandi"}
+              </Button>
             </div>
           </CardContent>
         </Card>
-
-        <div className="flex justify-end border-t border-slate-200 pt-6">
-          <Button type="submit" disabled={savingPassword || !passwordData.current_password} className="px-8 flex items-center gap-2 bg-rose-600 hover:bg-rose-700 text-white">
-            <Lock size={16} />
-            {savingPassword ? 'Menyimpan...' : 'Ubah Password'}
-          </Button>
-        </div>
       </form>
     </div>
-  )
+  );
 }
