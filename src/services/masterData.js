@@ -112,5 +112,19 @@ export const masterDataService = {
   deleteAcademicYear: async (id) => {
     const response = await api.delete(`/admin/academic-years/${id}`);
     return response.data;
+  },
+
+  // Campus Holidays
+  getHolidays: async () => {
+    const response = await api.get('/admin/holidays');
+    return response.data;
+  },
+  createHoliday: async (data) => {
+    const response = await api.post('/admin/holidays', data);
+    return response.data;
+  },
+  deleteHoliday: async (id) => {
+    const response = await api.delete(`/admin/holidays/${id}`);
+    return response.data;
   }
 };

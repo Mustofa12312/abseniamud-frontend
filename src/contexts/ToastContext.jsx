@@ -15,8 +15,12 @@ export const useToast = () => {
 export function ToastProvider({ children }) {
   const [toasts, setToasts] = useState([])
 
+  const removeToast = useCallback((id) => {
+    setToasts((prev) => prev.filter((toast) => toast.id !== id))
+  }, [])
+
   const addToast = useCallback((message, type = "info", duration = 3000) => {
-    const id = Date.now().toString()
+    const id = `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`
     setToasts((prev) => [...prev, { id, message, type }])
 
     if (duration > 0) {
@@ -24,11 +28,7 @@ export function ToastProvider({ children }) {
         removeToast(id)
       }, duration)
     }
-  }, [])
-
-  const removeToast = useCallback((id) => {
-    setToasts((prev) => prev.filter((toast) => toast.id !== id))
-  }, [])
+  }, [removeToast])
 
   const success = useCallback((message, duration) => addToast(message, "success", duration), [addToast])
   const error = useCallback((message, duration) => addToast(message, "error", duration), [addToast])

@@ -1,8 +1,17 @@
 {
   "$schema": "./node_modules/oxlint/configuration_schema.json",
   "plugins": ["react", "oxc"],
+  "ignorePatterns": ["dev-dist/**", "dist/**"],
   "rules": {
     "react/rules-of-hooks": "error",
     "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
+  },
+  "overrides": [
+    {
+      "files": ["src/contexts/**/*.jsx"],
+      "rules": {
+        "react/only-export-components": "off"
+      }
+    }
+  ]
 }

@@ -1,69 +1,63 @@
-import { forwardRef } from "react"
-import { cn } from "../../utils/utils"
+import { forwardRef } from "react";
+import { cn } from "../../utils/utils";
 
-const Table = forwardRef(({ className, ...props }, ref) => (
-  <div className="relative w-full overflow-auto rounded-xl border border-slate-200 bg-white shadow-sm">
-    <table
-      ref={ref}
-      className={cn("w-full caption-bottom text-sm", className)}
-      {...props}
-    />
+const Table = forwardRef(({ className, containerClassName, ...props }, ref) => (
+  <div
+    className={cn(
+      "relative w-full overflow-x-auto rounded-2xl border border-[#E5E5EA] dark:border-slate-700/60 bg-white dark:bg-slate-800/85 shadow-[0_2px_10px_rgb(0,0,0,0.03)] dark:shadow-none",
+      containerClassName
+    )}
+  >
+    <table ref={ref} className={cn("w-full caption-bottom text-sm text-left", className)} {...props} />
   </div>
-))
-Table.displayName = "Table"
+));
+Table.displayName = "Table";
 
 const TableHeader = forwardRef(({ className, ...props }, ref) => (
-  <thead ref={ref} className={cn("[&_tr]:border-b bg-slate-50", className)} {...props} />
-))
-TableHeader.displayName = "TableHeader"
-
-const TableBody = forwardRef(({ className, ...props }, ref) => (
-  <tbody
+  <thead
     ref={ref}
-    className={cn("[&_tr:last-child]:border-0", className)}
+    className={cn("[&_tr]:border-b bg-[#F9F9FB] dark:bg-slate-900/60 border-[#E5E5EA] dark:border-slate-700/60", className)}
     {...props}
   />
-))
-TableBody.displayName = "TableBody"
+));
+TableHeader.displayName = "TableHeader";
+
+const TableBody = forwardRef(({ className, ...props }, ref) => (
+  <tbody ref={ref} className={cn("[&_tr:last-child]:border-0", className)} {...props} />
+));
+TableBody.displayName = "TableBody";
 
 const TableRow = forwardRef(({ className, ...props }, ref) => (
   <tr
     ref={ref}
     className={cn(
-      "border-b transition-colors hover:bg-slate-50/50 data-[state=selected]:bg-slate-50",
+      "border-b border-[#F2F2F7] dark:border-slate-700/40 transition-colors hover:bg-[#F9F9FB] dark:hover:bg-slate-700/30 data-[state=selected]:bg-emerald-50/50 dark:data-[state=selected]:bg-emerald-950/20",
       className
     )}
     {...props}
   />
-))
-TableRow.displayName = "TableRow"
+));
+TableRow.displayName = "TableRow";
 
 const TableHead = forwardRef(({ className, ...props }, ref) => (
   <th
     ref={ref}
     className={cn(
-      "h-12 px-4 text-left align-middle font-medium text-slate-500 [&:has([role=checkbox])]:pr-0",
+      "h-11 px-4 sm:px-5 text-left align-middle text-[11px] font-semibold uppercase tracking-wider text-[#86868B] dark:text-slate-400 [&:has([role=checkbox])]:pr-0",
       className
     )}
     {...props}
   />
-))
-TableHead.displayName = "TableHead"
+));
+TableHead.displayName = "TableHead";
 
 const TableCell = forwardRef(({ className, ...props }, ref) => (
   <td
     ref={ref}
-    className={cn("p-4 align-middle [&:has([role=checkbox])]:pr-0", className)}
+    className={cn("px-4 sm:px-5 py-3.5 align-middle text-sm text-[#1D1D1F] dark:text-slate-200 [&:has([role=checkbox])]:pr-0", className)}
     {...props}
   />
-))
-TableCell.displayName = "TableCell"
+));
+TableCell.displayName = "TableCell";
 
-export {
-  Table,
-  TableHeader,
-  TableBody,
-  TableHead,
-  TableRow,
-  TableCell,
-}
+export { Table, TableHeader, TableBody, TableHead, TableRow, TableCell };

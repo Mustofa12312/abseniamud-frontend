@@ -1,37 +1,69 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { authService } from '../services/auth';
 
 const AuthContext = createContext(undefined);
 
-export function AuthProvider({ children }) {
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    // Check if token exists, then load user profile
+function readStoredUser() {
+  try {
     const token = localStorage.getItem('iaimu_token');
     const savedUser = localStorage.getItem('iaimu_user');
-    
     if (token && savedUser) {
-      setUser(JSON.parse(savedUser));
-      // Optionally fetch latest profile in background
-      authService.me()
-        .then(res => {
-           if(res.success) {
-               setUser(res.data);
-               localStorage.setItem('iaimu_user', JSON.stringify(res.data));
-           }
-        })
-        .catch(() => {
-           // Token might be invalid, interceptor will handle redirect
-        })
-        .finally(() => setLoading(false));
-    } else {
-      setLoading(false);
+      return JSON.parse(savedUser);
     }
+  } catch {
+    localStorage.removeItem('iaimu_user');
+  }
+  return null;
+}
+
+export function AuthProvider({ children }) {
+  const [user, setUser] = useState(readStoredUser);
+  const [loading, setLoading] = useState(() => {
+    const token = localStorage.getItem('iaimu_token');
+    const savedUser = localStorage.getItem('iaimu_user');
+    return Boolean(token && !savedUser);
+  });
+
+  const refreshUser = useCallback(async () => {
+    const token = localStorage.getItem('iaimu_token');
+    if (!token) return null;
+
+    const res = await authService.me();
+    if (res?.success && res?.data) {
+      setUser(res.data);
+      localStorage.setItem('iaimu_user', JSON.stringify(res.data));
+      return res.data;
+    }
+    return null;
   }, []);
 
-  const login = async (email, password) => {
+  useEffect(() => {
+    const token = localStorage.getItem('iaimu_token');
+    if (!token) return;
+
+    let cancelled = false;
+    authService.me()
+      .then((res) => {
+        if (!cancelled && res?.success && res?.data) {
+          setUser(res.data);
+          localStorage.setItem('iaimu_user', JSON.stringify(res.data));
+        }
+      })
+      .catch(() => {
+        // Token might be invalid, interceptor handles 401 redirect when needed
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const login = useCallback(async (email, password) => {
     const res = await authService.login(email, password);
     if (res.success && res.data) {
       localStorage.setItem('iaimu_token', res.data.token);
@@ -39,21 +71,23 @@ export function AuthProvider({ children }) {
       setUser(res.data.user);
     }
     return res;
-  };
+  }, []);
 
-  const logout = async () => {
+  const logout = useCallback(async () => {
     try {
       await authService.logout();
+    } catch {
+      // Ignore network errors during logout cleanup
     } finally {
       localStorage.removeItem('iaimu_token');
       localStorage.removeItem('iaimu_user');
       setUser(null);
       window.location.href = '/login';
     }
-  };
+  }, []);
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, loading, isAuthenticated: !!user }}>
+    <AuthContext.Provider value={{ user, login, logout, refreshUser, loading, isAuthenticated: !!user }}>
       {children}
     </AuthContext.Provider>
   );
