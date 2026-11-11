@@ -1,9 +1,10 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Check, X, Clock, AlertCircle, FileText, Calendar as CalendarIcon, User } from "lucide-react";
 import { Card } from "../../components/ui/Card";
 import { Badge } from "../../components/ui/Badge";
 import { Button } from "../../components/ui/Button";
 import { PageHeader } from "../../components/ui/PageHeader";
+import { Pagination } from "../../components/ui/Pagination";
 import { EmptyState } from "../../components/ui/EmptyState";
 import { adminService } from "../../services/admin";
 import { useToast } from "../../contexts/ToastContext";
@@ -13,20 +14,38 @@ export default function CorrectionMaster() {
   const [corrections, setCorrections] = useState([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState("ALL");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [meta, setMeta] = useState({ current_page: 1, last_page: 1, per_page: 10, total: 0, pending_total: 0 });
   const [processingId, setProcessingId] = useState(null);
+  const itemsPerPage = 10;
 
   const fetchCorrections = useCallback(async () => {
+    setLoading(true);
     try {
-      const res = await adminService.getCorrections();
+      const params = { page: currentPage, per_page: itemsPerPage };
+      if (statusFilter !== "ALL") {
+        params.status = statusFilter;
+      }
+      const res = await adminService.getCorrections(params);
       if (res.success) {
-        setCorrections(res.data || []);
+        const list = res.data || [];
+        setCorrections(list);
+        setMeta({
+          current_page: res.meta?.current_page ?? currentPage,
+          last_page: res.meta?.last_page ?? 1,
+          per_page: res.meta?.per_page ?? itemsPerPage,
+          total: res.meta?.total ?? list.length,
+          pending_total:
+            res.meta?.pending_total ??
+            list.filter((c) => String(c.status).toUpperCase() === "PENDING").length,
+        });
       }
     } catch {
       error("Gagal memuat pengajuan koreksi.");
     } finally {
       setLoading(false);
     }
-  }, [error]);
+  }, [currentPage, statusFilter, error]);
 
   useEffect(() => {
     let active = true;
@@ -45,9 +64,8 @@ export default function CorrectionMaster() {
           : await adminService.rejectCorrection(id);
 
       if (res.success) {
-        const nextStatus = actionType === "approve" ? "APPROVED" : "REJECTED";
-        setCorrections((prev) => prev.map((c) => (c.id === id ? { ...c, status: nextStatus } : c)));
         success(actionType === "approve" ? "Pengajuan berhasil disetujui." : "Pengajuan berhasil ditolak.");
+        await fetchCorrections();
       }
     } catch (err) {
       error(err.response?.data?.message || "Gagal memproses pengajuan.");
@@ -69,15 +87,7 @@ export default function CorrectionMaster() {
     }
   };
 
-  const pendingCount = useMemo(
-    () => corrections.filter((c) => c.status === "PENDING").length,
-    [corrections]
-  );
-
-  const filteredCorrections = useMemo(
-    () => corrections.filter((c) => (statusFilter === "ALL" ? true : c.status === statusFilter)),
-    [corrections, statusFilter]
-  );
+  const pendingCount = meta.pending_total;
 
   return (
     <div className="space-y-6">
@@ -102,7 +112,10 @@ export default function CorrectionMaster() {
               <button
                 key={val}
                 type="button"
-                onClick={() => setStatusFilter(val)}
+                onClick={() => {
+                  setStatusFilter(val);
+                  setCurrentPage(1);
+                }}
                 className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors cursor-pointer ${
                   statusFilter === val
                     ? "bg-emerald-600 text-white shadow-xs"
@@ -123,22 +136,23 @@ export default function CorrectionMaster() {
             <FileText size={16} className="text-emerald-600" />
             <span>Kotak Masuk Pengajuan</span>
           </div>
-          <Badge>{filteredCorrections.length} Pengajuan</Badge>
+          <Badge>{meta.total} Pengajuan</Badge>
         </div>
 
         {loading ? (
           <div className="p-12 text-center text-sm text-[#86868B] animate-pulse">
             Memuat data pengajuan koreksi...
           </div>
-        ) : filteredCorrections.length === 0 ? (
+        ) : corrections.length === 0 ? (
           <EmptyState
             icon={FileText}
             title="Semua Bersih!"
             description="Tidak ada pengajuan koreksi presensi pada filter saat ini."
           />
         ) : (
-          <div className="divide-y divide-[#F2F2F7] dark:divide-slate-700/50">
-            {filteredCorrections.map((item) => (
+          <>
+            <div className="divide-y divide-[#F2F2F7] dark:divide-slate-700/50">
+              {corrections.map((item) => (
               <div
                 key={item.id}
                 className="p-5 hover:bg-[#F9F9FB] dark:hover:bg-slate-700/25 transition-colors flex flex-col md:flex-row md:items-start justify-between gap-4"
@@ -189,7 +203,17 @@ export default function CorrectionMaster() {
                 )}
               </div>
             ))}
-          </div>
+            </div>
+            <Pagination
+              currentPage={meta.current_page}
+              lastPage={meta.last_page}
+              total={meta.total}
+              from={meta.total > 0 ? (meta.current_page - 1) * meta.per_page + 1 : 0}
+              to={Math.min(meta.current_page * meta.per_page, meta.total)}
+              onPageChange={setCurrentPage}
+              itemLabel="pengajuan"
+            />
+          </>
         )}
       </Card>
     </div>
