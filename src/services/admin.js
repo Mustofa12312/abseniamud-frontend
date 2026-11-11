@@ -72,8 +72,8 @@ export const adminService = {
     return response.data;
   },
   
-  getCorrections: async () => {
-    const response = await api.get('/admin/corrections');
+  getCorrections: async (params = {}) => {
+    const response = await api.get('/admin/corrections', { params });
     return response.data;
   },
   
@@ -87,8 +87,8 @@ export const adminService = {
     return response.data;
   },
   
-  getAuditLogs: async () => {
-    const response = await api.get('/admin/audit-logs');
+  getAuditLogs: async (params = {}) => {
+    const response = await api.get('/admin/audit-logs', { params });
     return response.data;
   },
 

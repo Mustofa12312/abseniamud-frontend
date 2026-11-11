@@ -30,19 +30,25 @@ import { featureService } from "../services/features";
 import api from "../services/api";
 import { getRoleDisplayLabel, isAcademicAdmin, resolveUserRole } from "../utils/rbac";
 
-const NOTIF_READ_KEY = "iaimu_admin_notif_read_sig";
+const getNotifReadKey = (userId) => `iaimu_admin_notif_read_sig_${userId || "anon"}`;
 
 export default function AdminLayout() {
+  const { user, logout } = useAuth();
+  const notifReadKey = getNotifReadKey(user?.id);
+
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isNotifOpen, setIsNotifOpen] = useState(false);
   const [notifications, setNotifications] = useState([]);
-  const [readSig, setReadSig] = useState(() => localStorage.getItem(NOTIF_READ_KEY) || "");
+  const [readSig, setReadSig] = useState(() => localStorage.getItem(getNotifReadKey(user?.id)) || "");
 
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, logout } = useAuth();
+
+  useEffect(() => {
+    setReadSig(localStorage.getItem(notifReadKey) || "");
+  }, [notifReadKey]);
 
   const userRole = resolveUserRole(user);
   const academicAdmin = isAcademicAdmin(user);
@@ -103,7 +109,7 @@ export default function AdminLayout() {
     try {
       const items = [];
       const [corrRes, leavesRes, annRes] = await Promise.allSettled([
-        academicAdmin ? adminService.getCorrections() : Promise.resolve(null),
+        academicAdmin ? adminService.getCorrections({ status: "PENDING", per_page: 10 }) : Promise.resolve(null),
         academicAdmin ? api.get("/admin/leaves?status=PENDING") : Promise.resolve(null),
         featureService.getAnnouncements(),
       ]);
@@ -111,7 +117,9 @@ export default function AdminLayout() {
       if (leavesRes.status === "fulfilled" && leavesRes.value?.data?.success) {
         const leavePayload = leavesRes.value.data.data;
         const leaveList = Array.isArray(leavePayload) ? leavePayload : leavePayload?.data || [];
-        const pendingLeaves = leavePayload?.total ?? leaveList.length;
+        const pendingLeaves =
+          leavePayload?.total ??
+          leaveList.filter((l) => String(l.status).toUpperCase() === "PENDING").length;
         if (pendingLeaves > 0) {
           items.push({
             id: `leaves-${pendingLeaves}`,
@@ -126,7 +134,11 @@ export default function AdminLayout() {
 
       if (corrRes.status === "fulfilled" && corrRes.value?.success) {
         const corrList = Array.isArray(corrRes.value.data) ? corrRes.value.data : [];
-        const pendingCorr = corrList.filter((c) => String(c.status).toUpperCase() === "PENDING").length;
+        const corrMeta = corrRes.value.meta;
+        const pendingCorr =
+          corrMeta?.pending_total ??
+          corrMeta?.total ??
+          corrList.filter((c) => String(c.status).toUpperCase() === "PENDING").length;
         if (pendingCorr > 0) {
           items.push({
             id: `corr-${pendingCorr}`,
@@ -173,7 +185,7 @@ export default function AdminLayout() {
   const unreadCount = notifications.length > 0 && currentNotifSig !== readSig ? notifications.length : 0;
 
   const markAllAsRead = () => {
-    localStorage.setItem(NOTIF_READ_KEY, currentNotifSig);
+    localStorage.setItem(notifReadKey, currentNotifSig);
     setReadSig(currentNotifSig);
   };
 

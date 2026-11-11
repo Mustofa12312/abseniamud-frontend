@@ -81,6 +81,10 @@ export function AuthProvider({ children }) {
     } finally {
       localStorage.removeItem('iaimu_token');
       localStorage.removeItem('iaimu_user');
+      localStorage.removeItem('iaimu_admin_notif_read_sig');
+      Object.keys(localStorage)
+        .filter((k) => k.startsWith('iaimu_admin_notif_read_sig_'))
+        .forEach((k) => localStorage.removeItem(k));
       setUser(null);
       window.location.href = '/login';
     }

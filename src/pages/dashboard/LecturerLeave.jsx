@@ -165,7 +165,7 @@ export default function LecturerLeave() {
                 </label>
                 <input
                   type="file"
-                  accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+                  accept=".pdf,.jpg,.jpeg,.png"
                   onChange={(e) => setDocumentFile(e.target.files?.[0] || null)}
                   className="block w-full text-xs text-[#86868B] file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100 cursor-pointer"
                 />

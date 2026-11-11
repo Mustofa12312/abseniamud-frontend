@@ -24,9 +24,9 @@ export const attendanceService = {
     return response.data;
   },
   
-  getHistory: async (month, year) => {
+  getHistory: async (month, year, params = {}) => {
     const response = await api.get('/attendance/history', {
-      params: { month, year }
+      params: { month, year, ...params }
     });
     return response.data;
   },
@@ -43,8 +43,8 @@ export const attendanceService = {
     return response.data;
   },
 
-  getCorrections: async () => {
-    const response = await api.get('/attendance/corrections');
+  getCorrections: async (params = {}) => {
+    const response = await api.get('/attendance/corrections', { params });
     return response.data;
   }
 };
