@@ -226,6 +226,11 @@ export default function LecturerDashboard() {
         color: "text-amber-700 dark:text-amber-400",
         bg: "bg-amber-50 dark:bg-amber-950/40 border-amber-200/80 dark:border-amber-800/50",
       },
+      ON_LEAVE: {
+        text: `Sedang ${todayStatus?.leave_type || todayStatus?.attendance_status || "Izin / Cuti"}`,
+        color: "text-purple-700 dark:text-purple-400",
+        bg: "bg-purple-50 dark:bg-purple-950/40 border-purple-200/80 dark:border-purple-800/50",
+      },
     }[status] || {
       text: status,
       color: "text-[#1D1D1F] dark:text-slate-200",

@@ -213,7 +213,23 @@ export default function LecturerLeave() {
                           </span>
                         </div>
                         <p className="text-xs sm:text-sm text-[#86868B] dark:text-slate-300 italic">"{item.reason}"</p>
-                        {doc && (
+                        {featureService.isUploadedDocument(item) ? (
+                          <div>
+                            <button
+                              type="button"
+                              onClick={async () => {
+                                try {
+                                  await featureService.openLeaveDocument(item);
+                                } catch (err) {
+                                  error(err.response?.data?.message || "Gagal membuka dokumen lampiran.");
+                                }
+                              }}
+                              className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-700 dark:text-emerald-400 hover:underline cursor-pointer"
+                            >
+                              <Paperclip size={11} /> Lihat Lampiran
+                            </button>
+                          </div>
+                        ) : doc && (
                           <div>
                             {doc.type === "url" ? (
                               <a

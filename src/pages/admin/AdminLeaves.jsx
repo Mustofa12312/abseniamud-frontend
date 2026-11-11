@@ -3,6 +3,7 @@ import {
   FileText, Loader2, Check, X, RotateCcw, Search, Calendar, UserX
 } from "lucide-react"
 import api from "../../services/api"
+import { featureService } from "../../services/features"
 import { useToast } from "../../contexts/ToastContext"
 import { resolveLeaveDocument } from "../../utils/format"
 
@@ -234,6 +235,23 @@ export default function AdminLeaves() {
                           {item.reason || '-'}
                         </div>
                         {(() => {
+                          if (featureService.isUploadedDocument(item)) {
+                            return (
+                              <button
+                                type="button"
+                                onClick={async () => {
+                                  try {
+                                    await featureService.openLeaveDocument(item);
+                                  } catch (err) {
+                                    error(err.response?.data?.message || "Gagal membuka dokumen lampiran.");
+                                  }
+                                }}
+                                className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-700 dark:text-emerald-400 hover:underline bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200/60 dark:border-emerald-800/40 px-2 py-0.5 rounded-md mt-1 transition-colors cursor-pointer"
+                              >
+                                <FileText className="w-3 h-3" /> Lihat Lampiran
+                              </button>
+                            );
+                          }
                           const doc = resolveLeaveDocument(item.document_path, import.meta.env.VITE_API_URL);
                           if (!doc) return null;
                           if (doc.type === 'url') {
