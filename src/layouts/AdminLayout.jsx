@@ -549,12 +549,12 @@ export default function AdminLayout() {
         </header>
 
         {/* Scrollable Workspace */}
-        <main className="flex-1 overflow-y-auto px-4 sm:px-8 py-7 space-y-6 custom-scrollbar">
+        <main className="flex-1 overflow-y-auto px-4 sm:px-8 py-7 custom-scrollbar">
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.25 }}
-            className="h-full"
+            className="max-w-[1360px] mx-auto w-full space-y-6"
           >
             <Outlet />
           </motion.div>

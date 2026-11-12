@@ -198,38 +198,60 @@ export default function CourseMaster() {
 
       {/* Filter Toolbar */}
       <Card>
-        <CardContent className="p-4 flex flex-col md:flex-row md:items-center gap-3">
-          <div className="relative flex-1">
-            <Input
-              icon={Search}
-              placeholder="Cari nama mata kuliah, kode, atau dosen pengampu..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-            {searchQuery && (
+        <CardContent className="p-4 flex flex-col md:flex-row md:items-center justify-between gap-3">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2.5 flex-1">
+            <div className="relative flex-1 max-w-md">
+              <Input
+                icon={Search}
+                placeholder="Cari nama mata kuliah, kode, atau dosen pengampu..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className={searchQuery ? "pr-9" : ""}
+              />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery("")}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#86868B] hover:text-[#1D1D1F] dark:hover:text-slate-200 p-1 rounded-md hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer"
+                  aria-label="Hapus pencarian"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
+
+            <select
+              value={filterFaculty}
+              onChange={(e) => setFilterFaculty(e.target.value)}
+              className="h-10 sm:h-11 rounded-xl border border-[#E5E5EA] dark:border-slate-700/70 bg-white dark:bg-slate-900/70 px-3.5 text-sm text-[#1D1D1F] dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500/35 focus:border-emerald-500 sm:w-64"
+            >
+              <option value="">Semua Fakultas / Prodi</option>
+              {faculties.map((f) => (
+                <option key={f.id} value={f.id}>
+                  {f.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="flex items-center justify-between md:justify-end gap-3 shrink-0">
+            <p className="text-xs text-[#86868B] dark:text-slate-400">
+              Menampilkan <span className="font-semibold text-[#1D1D1F] dark:text-slate-200">{filteredCourses.length}</span> dari{" "}
+              <span className="font-semibold text-[#1D1D1F] dark:text-slate-200">{courses.length}</span> mata kuliah
+            </p>
+            {(searchQuery || filterFaculty) && (
               <button
                 type="button"
-                onClick={() => setSearchQuery("")}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-[#86868B] hover:text-[#1D1D1F] dark:hover:text-slate-200 p-1"
-                aria-label="Hapus pencarian"
+                onClick={() => {
+                  setSearchQuery("");
+                  setFilterFaculty("");
+                }}
+                className="text-xs font-medium text-emerald-600 dark:text-emerald-400 hover:underline cursor-pointer"
               >
-                <X className="w-3.5 h-3.5" />
+                Reset
               </button>
             )}
           </div>
-
-          <select
-            value={filterFaculty}
-            onChange={(e) => setFilterFaculty(e.target.value)}
-            className="h-10 sm:h-11 rounded-xl border border-[#E5E5EA] dark:border-slate-700/70 bg-white dark:bg-slate-900/70 px-3.5 text-sm text-[#1D1D1F] dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500/35 focus:border-emerald-500 md:w-64"
-          >
-            <option value="">Semua Fakultas / Prodi</option>
-            {faculties.map((f) => (
-              <option key={f.id} value={f.id}>
-                {f.name}
-              </option>
-            ))}
-          </select>
         </CardContent>
       </Card>
 
@@ -280,15 +302,15 @@ export default function CourseMaster() {
                   </div>
                 </div>
 
-                <div className="mt-5 pt-4 border-t border-[#F2F2F7] dark:border-slate-700/60 flex items-center gap-2">
-                  <Button onClick={() => handleOpenEdit(course)} variant="outline" size="sm" className="flex-1">
+                <div className="mt-4 pt-3.5 border-t border-[#F2F2F7] dark:border-slate-700/60 grid grid-cols-2 sm:flex sm:items-center sm:justify-end gap-2">
+                  <Button onClick={() => handleOpenEdit(course)} variant="outline" size="sm" className="sm:px-3.5">
                     <Edit2 className="w-3.5 h-3.5" /> Edit
                   </Button>
                   <Button
                     onClick={() => handleOpenDelete(course)}
                     variant="outline"
                     size="sm"
-                    className="flex-1 text-red-600 dark:text-red-400 border-red-200 dark:border-red-900/50 hover:bg-red-50 dark:hover:bg-red-950/40"
+                    className="sm:px-3.5 text-red-600 dark:text-red-400 border-red-200 dark:border-red-900/50 hover:bg-red-50 dark:hover:bg-red-950/40"
                   >
                     <Trash2 className="w-3.5 h-3.5" /> Hapus
                   </Button>
@@ -299,15 +321,26 @@ export default function CourseMaster() {
         ) : (
           <Card className="col-span-full">
             <EmptyState
-              title="Belum Ada Mata Kuliah"
+              icon={BookOpen}
+              title={searchQuery || filterFaculty ? "Mata Kuliah Tidak Ditemukan" : "Belum Ada Mata Kuliah"}
               description={
                 searchQuery || filterFaculty
                   ? "Tidak ada mata kuliah yang cocok dengan pencarian atau filter fakultas saat ini."
                   : "Data master mata kuliah masih kosong. Tambahkan mata kuliah baru untuk mulai menyusun jadwal."
               }
               action={
-                !searchQuery &&
-                !filterFaculty && (
+                searchQuery || filterFaculty ? (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setSearchQuery("");
+                      setFilterFaculty("");
+                    }}
+                  >
+                    Reset Filter
+                  </Button>
+                ) : (
                   <Button size="sm" onClick={handleOpenCreate}>
                     <Plus className="w-4 h-4" /> Tambah Mata Kuliah
                   </Button>

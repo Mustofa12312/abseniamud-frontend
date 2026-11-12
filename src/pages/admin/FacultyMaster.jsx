@@ -230,12 +230,13 @@ export default function FacultyMaster() {
               placeholder="Cari nama fakultas, prodi, atau kode..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
+              className={searchQuery ? "pr-9" : ""}
             />
             {searchQuery && (
               <button
                 type="button"
                 onClick={() => setSearchQuery("")}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-[#86868B] hover:text-[#1D1D1F] dark:hover:text-slate-200 p-1"
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#86868B] hover:text-[#1D1D1F] dark:hover:text-slate-200 p-1 rounded-md hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer"
                 aria-label="Hapus pencarian"
               >
                 <X className="w-3.5 h-3.5" />
@@ -264,42 +265,43 @@ export default function FacultyMaster() {
           filteredFaculties.map((faculty) => (
             <Card
               key={faculty.id}
-              className="flex flex-col hover:border-[#D2D2D7] dark:hover:border-slate-600 transition-all"
+              className="flex flex-col hover:border-[#D2D2D7] dark:hover:border-slate-600 hover:shadow-apple-card transition-all"
             >
               <CardContent className="p-5 flex-1 flex flex-col">
-                <div className="flex items-start justify-between gap-3 mb-4">
-                  <div className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border border-emerald-200/70 dark:border-emerald-800/40 flex items-center justify-center shrink-0">
-                    <GraduationCap className="w-5 h-5" />
+                <div className="flex items-start justify-between gap-3 flex-1">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border border-emerald-200/70 dark:border-emerald-800/40 flex items-center justify-center shrink-0">
+                      <GraduationCap className="w-5 h-5" />
+                    </div>
+                    <div className="min-w-0">
+                      <h3 className="text-[15px] font-semibold text-[#1D1D1F] dark:text-slate-100 leading-snug">
+                        {faculty.name}
+                      </h3>
+                      <p className="text-xs text-[#86868B] dark:text-slate-400 mt-0.5">
+                        Fakultas / Program Studi
+                      </p>
+                    </div>
                   </div>
                   {faculty.code ? (
-                    <Badge variant="primary" className="font-mono">
+                    <Badge variant="primary" className="font-mono shrink-0">
                       {faculty.code}
                     </Badge>
                   ) : (
-                    <Badge variant="default">Tanpa Kode</Badge>
+                    <Badge variant="default" className="shrink-0">
+                      Tanpa Kode
+                    </Badge>
                   )}
                 </div>
 
-                <h3 className="text-base font-semibold text-[#1D1D1F] dark:text-slate-100 leading-snug">
-                  {faculty.name}
-                </h3>
-
-                <div className="mt-3 flex items-center justify-between text-xs flex-1">
-                  <span className="text-[#86868B] dark:text-slate-400">Kode Singkatan</span>
-                  <span className="font-mono font-medium text-[#1D1D1F] dark:text-slate-200">
-                    {faculty.code || "-"}
-                  </span>
-                </div>
-
-                <div className="mt-5 pt-4 border-t border-[#F2F2F7] dark:border-slate-700/60 flex items-center gap-2">
-                  <Button onClick={() => handleOpenEdit(faculty)} variant="outline" size="sm" className="flex-1">
+                <div className="mt-4 pt-3.5 border-t border-[#F2F2F7] dark:border-slate-700/60 grid grid-cols-2 sm:flex sm:items-center sm:justify-end gap-2">
+                  <Button onClick={() => handleOpenEdit(faculty)} variant="outline" size="sm" className="sm:px-3.5">
                     <Edit2 className="w-3.5 h-3.5" /> Edit
                   </Button>
                   <Button
                     onClick={() => handleOpenDelete(faculty)}
                     variant="outline"
                     size="sm"
-                    className="flex-1 text-red-600 dark:text-red-400 border-red-200 dark:border-red-900/50 hover:bg-red-50 dark:hover:bg-red-950/40"
+                    className="sm:px-3.5 text-red-600 dark:text-red-400 border-red-200 dark:border-red-900/50 hover:bg-red-50 dark:hover:bg-red-950/40"
                   >
                     <Trash2 className="w-3.5 h-3.5" /> Hapus
                   </Button>
@@ -310,6 +312,7 @@ export default function FacultyMaster() {
         ) : (
           <Card className="col-span-full">
             <EmptyState
+              icon={GraduationCap}
               title={searchQuery ? "Fakultas / Prodi Tidak Ditemukan" : "Belum Ada Fakultas"}
               description={
                 searchQuery
@@ -317,7 +320,11 @@ export default function FacultyMaster() {
                   : "Data master fakultas atau program studi masih kosong. Tambahkan data baru atau gunakan fitur impor massal."
               }
               action={
-                !searchQuery && (
+                searchQuery ? (
+                  <Button variant="outline" size="sm" onClick={() => setSearchQuery("")}>
+                    Reset Pencarian
+                  </Button>
+                ) : (
                   <Button size="sm" onClick={handleOpenCreate}>
                     <Plus className="w-4 h-4" /> Tambah Fakultas
                   </Button>

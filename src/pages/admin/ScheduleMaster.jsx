@@ -257,7 +257,7 @@ export default function ScheduleMaster() {
                 </Badge>
               </CardHeader>
 
-              <CardContent className="p-0 flex-1 flex flex-col">
+              <CardContent className="p-0 sm:p-0 flex-1 flex flex-col">
                 {loading ? (
                   <div className="p-8 flex items-center justify-center text-xs text-[#86868B] gap-2">
                     <Loader2 className="w-4 h-4 animate-spin text-emerald-600" />

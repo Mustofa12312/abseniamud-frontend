@@ -70,7 +70,7 @@ export default function Login() {
           <CardTitle className="text-xl font-semibold">Masuk Akun</CardTitle>
           <CardDescription>Silakan masukkan email dan kata sandi Anda</CardDescription>
         </CardHeader>
-        <CardContent className="pb-7">
+        <CardContent className="px-5 sm:px-6 pt-0 pb-7">
           {error && (
             <div className="mb-4 p-3 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200/80 dark:border-red-800/60 text-red-700 dark:text-red-400 text-xs sm:text-sm flex items-start gap-2">
               <AlertCircle size={16} className="mt-0.5 shrink-0" />
