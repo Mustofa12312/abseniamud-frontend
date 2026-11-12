@@ -7,7 +7,7 @@ import { Badge } from "../../components/ui/Badge";
 import { Modal } from "../../components/ui/Modal";
 import { PageHeader } from "../../components/ui/PageHeader";
 import { EmptyState } from "../../components/ui/EmptyState";
-import { BookOpen, Plus, Edit2, Trash2, Search, X, AlertTriangle, User } from "lucide-react";
+import { BookOpen, Plus, Edit2, Trash2, Search, X, AlertTriangle, User, Layers } from "lucide-react";
 import { masterDataService } from "../../services/masterData";
 import { lecturerService } from "../../services/lecturer";
 import { useToast } from "../../contexts/ToastContext";
@@ -32,6 +32,7 @@ export default function CourseMaster() {
   const [loading, setLoading] = useState(true);
 
   const [filterFaculty, setFilterFaculty] = useState("");
+  const [filterSemester, setFilterSemester] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
 
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -75,25 +76,61 @@ export default function CourseMaster() {
     return () => { active = false; };
   }, [fetchData]);
 
-  const filteredCourses = courses.filter((course) => {
-    const q = searchQuery.toLowerCase().trim();
-    if (!q) return true;
-    return (
-      (course.name || "").toLowerCase().includes(q) ||
-      (course.code || "").toLowerCase().includes(q) ||
-      (course.lecturer_name || "").toLowerCase().includes(q) ||
-      (course.faculty?.name || "").toLowerCase().includes(q)
-    );
-  });
+  const semesterOptions = Array.from(
+    new Set([
+      1, 2, 3, 4, 5, 6, 7, 8,
+      ...courses
+        .map((c) => Number(c.semester))
+        .filter((n) => Number.isInteger(n) && n > 0),
+    ])
+  ).sort((a, b) => a - b);
+
+  const filteredCourses = courses
+    .filter((course) => {
+      if (filterSemester === "odd" && Number(course.semester) % 2 === 0) return false;
+      if (filterSemester === "even" && Number(course.semester) % 2 !== 0) return false;
+      if (
+        filterSemester &&
+        filterSemester !== "odd" &&
+        filterSemester !== "even" &&
+        String(course.semester) !== String(filterSemester)
+      ) {
+        return false;
+      }
+
+      const q = searchQuery.toLowerCase().trim();
+      if (!q) return true;
+      return (
+        (course.name || "").toLowerCase().includes(q) ||
+        (course.code || "").toLowerCase().includes(q) ||
+        (course.lecturer_name || "").toLowerCase().includes(q) ||
+        (course.faculty?.name || "").toLowerCase().includes(q)
+      );
+    })
+    .sort((a, b) => {
+      const semDiff = (Number(a.semester) || 0) - (Number(b.semester) || 0);
+      if (semDiff !== 0) return semDiff;
+      return (a.name || "").localeCompare(b.name || "", "id");
+    });
+
+  const totalVisibleSks = filteredCourses.reduce((sum, c) => sum + (Number(c.sks) || 0), 0);
+  const hasActiveFilter = Boolean(searchQuery || filterFaculty || filterSemester);
+
+  const resetFilters = () => {
+    setSearchQuery("");
+    setFilterFaculty("");
+    setFilterSemester("");
+  };
 
   const handleOpenCreate = () => {
+    const prefilledSemester = /^\d+$/.test(filterSemester) ? filterSemester : "1";
     setEditingCourse(null);
     setFormData({
       faculty_id: filterFaculty || (faculties.length > 0 ? faculties[0].id : ""),
       lecturer_id: "",
       name: "",
       code: "",
-      semester: "1",
+      semester: prefilledSemester,
       sks: "2",
     });
     setIsModalOpen(true);
@@ -127,10 +164,21 @@ export default function CourseMaster() {
       error("Pilih fakultas / program studi terlebih dahulu.");
       return;
     }
+    const trimmedName = formData.name.trim();
+    if (!trimmedName) {
+      error("Nama mata kuliah wajib diisi.");
+      return;
+    }
     setSubmitting(true);
     try {
-      const submitData = { ...formData };
-      if (!submitData.lecturer_id) submitData.lecturer_id = null;
+      const submitData = {
+        ...formData,
+        name: trimmedName,
+        code: formData.code.trim() || null,
+        lecturer_id: formData.lecturer_id || null,
+        semester: Number(formData.semester),
+        sks: Number(formData.sks),
+      };
 
       const res = editingCourse
         ? await masterDataService.updateCourse(editingCourse.id, submitData)
@@ -198,9 +246,9 @@ export default function CourseMaster() {
 
       {/* Filter Toolbar */}
       <Card>
-        <CardContent className="p-4 flex flex-col md:flex-row md:items-center justify-between gap-3">
-          <div className="flex flex-col sm:flex-row sm:items-center gap-2.5 flex-1">
-            <div className="relative flex-1 max-w-md">
+        <CardContent className="p-4 flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+          <div className="flex flex-col sm:flex-row sm:flex-wrap lg:flex-nowrap sm:items-center gap-2.5 flex-1 min-w-0">
+            <div className="relative flex-1 min-w-[200px] sm:max-w-sm">
               <Input
                 icon={Search}
                 placeholder="Cari nama mata kuliah, kode, atau dosen pengampu..."
@@ -223,7 +271,8 @@ export default function CourseMaster() {
             <select
               value={filterFaculty}
               onChange={(e) => setFilterFaculty(e.target.value)}
-              className="h-10 sm:h-11 rounded-xl border border-[#E5E5EA] dark:border-slate-700/70 bg-white dark:bg-slate-900/70 px-3.5 text-sm text-[#1D1D1F] dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500/35 focus:border-emerald-500 sm:w-64"
+              aria-label="Filter Fakultas atau Program Studi"
+              className="h-10 sm:h-11 rounded-xl border border-[#E5E5EA] dark:border-slate-700/70 bg-white dark:bg-slate-900/70 px-3.5 text-sm text-[#1D1D1F] dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500/35 focus:border-emerald-500 sm:w-56 lg:w-60"
             >
               <option value="">Semua Fakultas / Prodi</option>
               {faculties.map((f) => (
@@ -232,20 +281,41 @@ export default function CourseMaster() {
                 </option>
               ))}
             </select>
+
+            <div className="relative flex items-center sm:w-48 shrink-0">
+              <Layers className="w-3.5 h-3.5 text-[#86868B] absolute left-3 pointer-events-none" />
+              <select
+                value={filterSemester}
+                onChange={(e) => setFilterSemester(e.target.value)}
+                aria-label="Filter Semester"
+                className="h-10 sm:h-11 w-full rounded-xl border border-[#E5E5EA] dark:border-slate-700/70 bg-white dark:bg-slate-900/70 pl-8 pr-3 text-sm text-[#1D1D1F] dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500/35 focus:border-emerald-500"
+              >
+                <option value="">Semua Semester</option>
+                <optgroup label="Per Semester">
+                  {semesterOptions.map((s) => (
+                    <option key={s} value={String(s)}>
+                      Semester {s}
+                    </option>
+                  ))}
+                </optgroup>
+                <optgroup label="Berdasarkan Periode">
+                  <option value="odd">Semester Ganjil (1, 3, 5, 7)</option>
+                  <option value="even">Semester Genap (2, 4, 6, 8)</option>
+                </optgroup>
+              </select>
+            </div>
           </div>
 
-          <div className="flex items-center justify-between md:justify-end gap-3 shrink-0">
+          <div className="flex items-center justify-between lg:justify-end gap-3 shrink-0">
             <p className="text-xs text-[#86868B] dark:text-slate-400">
               Menampilkan <span className="font-semibold text-[#1D1D1F] dark:text-slate-200">{filteredCourses.length}</span> dari{" "}
               <span className="font-semibold text-[#1D1D1F] dark:text-slate-200">{courses.length}</span> mata kuliah
+              {filteredCourses.length > 0 && ` · ${totalVisibleSks} SKS`}
             </p>
-            {(searchQuery || filterFaculty) && (
+            {hasActiveFilter && (
               <button
                 type="button"
-                onClick={() => {
-                  setSearchQuery("");
-                  setFilterFaculty("");
-                }}
+                onClick={resetFilters}
                 className="text-xs font-medium text-emerald-600 dark:text-emerald-400 hover:underline cursor-pointer"
               >
                 Reset
@@ -256,11 +326,33 @@ export default function CourseMaster() {
       </Card>
 
       {/* Grid Cards */}
-      <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+      <div className="grid gap-4 sm:gap-5 md:grid-cols-2 xl:grid-cols-3">
         {loading ? (
-          <Card className="col-span-full p-12 text-center text-sm text-[#86868B] animate-pulse">
-            Memuat data mata kuliah...
-          </Card>
+          [1, 2, 3].map((idx) => (
+            <Card key={idx} className="animate-pulse">
+              <CardContent className="p-5 space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="w-10 h-10 rounded-xl bg-black/5 dark:bg-white/10" />
+                  <div className="flex gap-1.5">
+                    <div className="w-14 h-5 rounded-full bg-black/5 dark:bg-white/10" />
+                    <div className="w-14 h-5 rounded-full bg-black/5 dark:bg-white/10" />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <div className="h-5 w-44 rounded bg-black/5 dark:bg-white/10" />
+                  <div className="h-3.5 w-32 rounded bg-black/5 dark:bg-white/10" />
+                </div>
+                <div className="space-y-2 pt-2">
+                  <div className="h-3.5 w-full rounded bg-black/5 dark:bg-white/10" />
+                  <div className="h-3.5 w-2/3 rounded bg-black/5 dark:bg-white/10" />
+                </div>
+                <div className="pt-3 border-t border-[#F2F2F7] dark:border-slate-700/60 flex justify-end gap-2">
+                  <div className="h-8 w-20 rounded-xl bg-black/5 dark:bg-white/10" />
+                  <div className="h-8 w-20 rounded-xl bg-black/5 dark:bg-white/10" />
+                </div>
+              </CardContent>
+            </Card>
+          ))
         ) : filteredCourses.length > 0 ? (
           filteredCourses.map((course) => (
             <Card
@@ -322,22 +414,15 @@ export default function CourseMaster() {
           <Card className="col-span-full">
             <EmptyState
               icon={BookOpen}
-              title={searchQuery || filterFaculty ? "Mata Kuliah Tidak Ditemukan" : "Belum Ada Mata Kuliah"}
+              title={hasActiveFilter ? "Mata Kuliah Tidak Ditemukan" : "Belum Ada Mata Kuliah"}
               description={
-                searchQuery || filterFaculty
-                  ? "Tidak ada mata kuliah yang cocok dengan pencarian atau filter fakultas saat ini."
+                hasActiveFilter
+                  ? "Tidak ada mata kuliah yang cocok dengan filter atau pencarian saat ini."
                   : "Data master mata kuliah masih kosong. Tambahkan mata kuliah baru untuk mulai menyusun jadwal."
               }
               action={
-                searchQuery || filterFaculty ? (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      setSearchQuery("");
-                      setFilterFaculty("");
-                    }}
-                  >
+                hasActiveFilter ? (
+                  <Button variant="outline" size="sm" onClick={resetFilters}>
                     Reset Filter
                   </Button>
                 ) : (
@@ -443,7 +528,7 @@ export default function CourseMaster() {
                 required
                 className="flex h-10 sm:h-11 w-full rounded-xl border border-[#E5E5EA] dark:border-slate-700/70 bg-white dark:bg-slate-900/70 px-3 text-sm text-[#1D1D1F] dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500/35 focus:border-emerald-500"
               >
-                {[1, 2, 3, 4, 5, 6, 7, 8].map((s) => (
+                {semesterOptions.map((s) => (
                   <option key={s} value={s}>
                     Semester {s}
                   </option>
