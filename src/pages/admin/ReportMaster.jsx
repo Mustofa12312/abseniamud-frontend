@@ -241,7 +241,24 @@ export default function ReportMaster() {
             ) : (
               reports.map((report) => (
                 <TableRow key={report.id}>
-                  <TableCell className="font-semibold">{report.name}</TableCell>
+                  <TableCell>
+                    <div className="font-semibold">{report.name}</div>
+                    <div className="flex flex-wrap items-center gap-1.5 mt-1">
+                      <Badge variant={report.is_daily_mandatory ? "purple" : "default"}>
+                        {report.is_daily_mandatory ? "Wajib Harian" : "Sesuai Jadwal"}
+                      </Badge>
+                      {report.working_days != null && (
+                        <span className="text-[11px] text-[#86868B] dark:text-slate-400">
+                          Target {report.working_days} hari
+                        </span>
+                      )}
+                      {report.penugasan && report.penugasan !== "-" && (
+                        <span className="text-[11px] text-[#86868B] dark:text-slate-400">
+                          • {report.penugasan}
+                        </span>
+                      )}
+                    </div>
+                  </TableCell>
                   <TableCell className="font-mono text-xs text-[#86868B]">{report.nidn || "-"}</TableCell>
                   <TableCell className="text-center">
                     <Badge variant="success">{report.hadir}</Badge>
@@ -310,6 +327,8 @@ export default function ReportMaster() {
                           ? "success"
                           : record.status === "TERLAMBAT"
                           ? "warning"
+                          : ["IZIN", "SAKIT", "CUTI"].includes(record.status)
+                          ? "info"
                           : "danger"
                       }
                     >

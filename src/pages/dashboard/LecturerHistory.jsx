@@ -75,7 +75,12 @@ export default function LecturerHistory() {
         return "success";
       case "TERLAMBAT":
         return "warning";
+      case "IZIN":
+      case "SAKIT":
+      case "CUTI":
+        return "purple";
       case "TIDAK_HADIR":
+      case "ALPHA":
         return "danger";
       default:
         return "default";
@@ -125,7 +130,7 @@ export default function LecturerHistory() {
 
       {/* Summary Cards */}
       {!loading && summary && (
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3.5">
           <Card>
             <CardContent className="p-4 pt-4">
               <p className="text-xs font-medium text-[#86868B] dark:text-slate-400">Hadir</p>
@@ -136,6 +141,12 @@ export default function LecturerHistory() {
             <CardContent className="p-4 pt-4">
               <p className="text-xs font-medium text-[#86868B] dark:text-slate-400">Terlambat</p>
               <p className="text-2xl font-bold text-amber-600 dark:text-amber-400 mt-1">{summary.terlambat}</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4 pt-4">
+              <p className="text-xs font-medium text-[#86868B] dark:text-slate-400">Izin / Sakit</p>
+              <p className="text-2xl font-bold text-purple-600 dark:text-purple-400 mt-1">{summary.izin_sakit ?? 0}</p>
             </CardContent>
           </Card>
           <Card>
@@ -180,6 +191,8 @@ export default function LecturerHistory() {
                   ? "bg-emerald-500"
                   : record.status === "TERLAMBAT"
                   ? "bg-amber-500"
+                  : ["IZIN", "SAKIT", "CUTI"].includes(record.status)
+                  ? "bg-purple-500"
                   : "bg-rose-500";
               return (
                 <Card key={record.id} className="overflow-hidden relative">

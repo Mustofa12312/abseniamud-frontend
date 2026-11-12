@@ -5,10 +5,18 @@ import {
 } from "lucide-react"
 import { adminService } from "../../services/admin"
 
+const formatLocalDate = (d = new Date()) => {
+  const year = d.getFullYear()
+  const month = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
 export default function Monitoring() {
   const autoSyncCheckboxId = useId()
-  const today = new Date().toISOString().split('T')[0]
+  const today = formatLocalDate()
   const [date, setDate] = useState("")
+  const [holidayName, setHolidayName] = useState(null)
   const [selectedDate, setSelectedDate] = useState(today)
   const [attendanceData, setAttendanceData] = useState([])
   const [loading, setLoading] = useState(true)
@@ -37,6 +45,9 @@ export default function Monitoring() {
       if (res.success) {
         setAttendanceData(res.data || [])
         setDate(res.date || dateParam)
+        setHolidayName(res.holiday_name || null)
+      } else {
+        setHolidayName(null)
       }
     } catch (err) {
       console.error("Failed to fetch attendance data", err)
@@ -82,7 +93,7 @@ export default function Monitoring() {
   const hadirCount = attendanceData.filter(r => r.status === "HADIR").length
   const terlambatCount = attendanceData.filter(r => r.status === "TERLAMBAT").length
   const izinCount = attendanceData.filter(r => ["IZIN", "SAKIT", "CUTI"].includes(r.status)).length
-  const belumAbsenCount = attendanceData.filter(r => r.status === "Belum Absen" || r.status === "ALPHA").length
+  const belumAbsenCount = attendanceData.filter(r => ["Belum Absen", "ALPHA", "TIDAK_HADIR"].includes(r.status)).length
 
   const filteredData = attendanceData.filter(row => {
     const matchesSearch = row.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -90,7 +101,7 @@ export default function Monitoring() {
     if (statusFilter !== "Semua") {
       if (statusFilter === "Hadir") matchesStatus = row.status === "HADIR"
       else if (statusFilter === "Terlambat") matchesStatus = row.status === "TERLAMBAT"
-      else if (statusFilter === "Alpa") matchesStatus = row.status === "Belum Absen" || row.status === "ALPHA"
+      else if (statusFilter === "Alpa") matchesStatus = ["Belum Absen", "ALPHA", "TIDAK_HADIR"].includes(row.status)
       else if (statusFilter === "Izin") matchesStatus = ["IZIN", "SAKIT", "CUTI"].includes(row.status)
     }
     return matchesSearch && matchesStatus
@@ -147,6 +158,13 @@ export default function Monitoring() {
       return (
         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-400 border border-blue-100 dark:border-blue-900/40">
           {status}
+        </span>
+      )
+    }
+    if (status === "TIDAK_HADIR" || status === "ALPHA") {
+      return (
+        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-400 border border-rose-200/70 dark:border-rose-900/50">
+          {status === "TIDAK_HADIR" ? "TIDAK HADIR" : "ALPHA"}
         </span>
       )
     }
@@ -214,6 +232,15 @@ export default function Monitoring() {
         </div>
       </div>
       {/* ── END: Header & Action Controls ── */}
+
+      {holidayName && (
+        <div className="flex items-center gap-2.5 px-4 py-3 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200/80 dark:border-amber-800/50 text-amber-800 dark:text-amber-300 text-xs sm:text-sm font-medium">
+          <Calendar className="w-4 h-4 shrink-0" />
+          <span>
+            Hari Libur Aktif ({holidayName}) — presensi pada tanggal ini dinonaktifkan.
+          </span>
+        </div>
+      )}
 
       {/* ── BEGIN: MetricCardsSection ── */}
       <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5" data-purpose="metrics-summary">

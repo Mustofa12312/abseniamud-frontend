@@ -59,10 +59,20 @@ export default function UserMaster() {
 
   const handleChange = (e) => {
     const { name, type, checked, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: type === "checkbox" ? checked : value,
-    }));
+    setFormData((prev) => {
+      const next = {
+        ...prev,
+        [name]: type === "checkbox" ? checked : value,
+      };
+      if (name === "role") {
+        if (value === "tendik" && (!editingUser || prev.attendance_type === "schedule_based")) {
+          next.attendance_type = "daily_mandatory";
+        } else if (value === "dosen" && !editingUser) {
+          next.attendance_type = "schedule_based";
+        }
+      }
+      return next;
+    });
   };
 
   const handleSubmit = async (e) => {

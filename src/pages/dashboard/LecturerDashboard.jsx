@@ -204,35 +204,49 @@ export default function LecturerDashboard() {
   const canCheckOut = status === "CHECKED_IN";
   const isLoading = actionLoading || locationLoading;
 
+  const formattedLeaveLabel = (() => {
+    const raw = (todayStatus?.leave_type || todayStatus?.attendance_status || "Izin / Cuti").toUpperCase();
+    if (raw === "IZIN") return "Izin";
+    if (raw === "SAKIT") return "Sakit";
+    if (raw === "CUTI") return "Cuti";
+    return todayStatus?.leave_type || todayStatus?.attendance_status || "Izin / Cuti";
+  })();
+
   const statusMeta =
     {
       NOT_CHECKED_IN: {
         text: "Belum Absen",
+        subtext: null,
         color: "text-[#1D1D1F] dark:text-slate-200",
         bg: "bg-white dark:bg-slate-800/85 border-[#E5E5EA] dark:border-slate-700/60",
       },
       CHECKED_IN: {
         text: "Sudah Check-in",
+        subtext: null,
         color: "text-emerald-700 dark:text-emerald-400",
         bg: "bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200/80 dark:border-emerald-800/50",
       },
       CHECKED_OUT: {
         text: "Selesai Hari Ini",
+        subtext: null,
         color: "text-blue-700 dark:text-blue-400",
         bg: "bg-blue-50 dark:bg-blue-950/40 border-blue-200/80 dark:border-blue-800/50",
       },
       HOLIDAY: {
         text: todayStatus?.holiday_name ? `Hari Libur (${todayStatus.holiday_name})` : "Hari Libur",
+        subtext: "Hari libur aktif — presensi dinonaktifkan.",
         color: "text-amber-700 dark:text-amber-400",
         bg: "bg-amber-50 dark:bg-amber-950/40 border-amber-200/80 dark:border-amber-800/50",
       },
       ON_LEAVE: {
-        text: `Sedang ${todayStatus?.leave_type || todayStatus?.attendance_status || "Izin / Cuti"}`,
+        text: `Sedang ${formattedLeaveLabel}`,
+        subtext: "Pengajuan izin/sakit/cuti disetujui — check-in tidak diperlukan.",
         color: "text-purple-700 dark:text-purple-400",
         bg: "bg-purple-50 dark:bg-purple-950/40 border-purple-200/80 dark:border-purple-800/50",
       },
     }[status] || {
       text: status,
+      subtext: null,
       color: "text-[#1D1D1F] dark:text-slate-200",
       bg: "bg-white dark:bg-slate-800/85 border-[#E5E5EA] dark:border-slate-700/60",
     };
@@ -306,8 +320,14 @@ export default function LecturerDashboard() {
                 </p>
                 <p className={`font-semibold text-sm flex items-center gap-1.5 ${statusMeta.color}`}>
                   {status === "HOLIDAY" && <Palmtree size={15} />}
+                  {status === "ON_LEAVE" && <FileX size={15} />}
                   {statusMeta.text}
                 </p>
+                {statusMeta.subtext && (
+                  <p className="text-xs text-[#86868B] dark:text-slate-400 mt-0.5">
+                    {statusMeta.subtext}
+                  </p>
+                )}
               </div>
               <div className="text-right text-xs text-[#86868B] dark:text-slate-400 space-y-0.5">
                 {todayStatus?.check_in_at && (
