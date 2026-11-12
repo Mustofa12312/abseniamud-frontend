@@ -5,7 +5,7 @@ import { EmptyState } from "../../components/ui/EmptyState";
 import { PageHeader } from "../../components/ui/PageHeader";
 import { scheduleService } from "../../services/schedule";
 
-const DAY_ORDER = ["Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
+const DAY_ORDER = ["Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu", "Minggu"];
 const DAY_BADGE = {
   Senin: "bg-blue-50 dark:bg-blue-950/40 border-blue-200/80 dark:border-blue-800/50 text-blue-700 dark:text-blue-400",
   Selasa: "bg-purple-50 dark:bg-purple-950/40 border-purple-200/80 dark:border-purple-800/50 text-purple-700 dark:text-purple-400",
@@ -13,6 +13,7 @@ const DAY_BADGE = {
   Kamis: "bg-amber-50 dark:bg-amber-950/40 border-amber-200/80 dark:border-amber-800/50 text-amber-700 dark:text-amber-400",
   Jumat: "bg-rose-50 dark:bg-rose-950/40 border-rose-200/80 dark:border-rose-800/50 text-rose-700 dark:text-rose-400",
   Sabtu: "bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300",
+  Minggu: "bg-indigo-50 dark:bg-indigo-950/40 border-indigo-200/80 dark:border-indigo-800/50 text-indigo-700 dark:text-indigo-400",
 };
 
 export default function LecturerSchedule() {
@@ -107,6 +108,12 @@ export default function LecturerSchedule() {
                         {Boolean(item.sks) && (
                           <span className="flex items-center gap-1">
                             <BookOpen size={12} /> {item.sks} SKS
+                          </span>
+                        )}
+                        {item.faculty_name && (
+                          <span>
+                            {item.faculty_name}
+                            {item.semester ? ` (Smt ${item.semester})` : ""}
                           </span>
                         )}
                       </div>
