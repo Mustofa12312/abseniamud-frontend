@@ -39,7 +39,7 @@ export const adminService = {
     return response.data;
   },
 
-  exportReports: async (month, year, role = 'all') => {
+  exportReports: async (month, year, role = 'all', format = 'xlsx') => {
     let url = '/admin/reports/export';
     let params = [];
     if (month && year) {
@@ -49,13 +49,18 @@ export const adminService = {
     if (role && role !== 'all') {
       params.push(`role=${role}`);
     }
+    if (format) {
+      params.push(`format=${format}`);
+    }
     if (params.length > 0) {
       url += '?' + params.join('&');
     }
     const response = await api.get(url, {
       responseType: 'blob',
       headers: {
-        Accept: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/octet-stream, */*'
+        Accept: format === 'csv'
+          ? 'text/csv, application/octet-stream, */*'
+          : 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/octet-stream, */*'
       }
     });
     return response.data;

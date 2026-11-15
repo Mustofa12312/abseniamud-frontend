@@ -91,6 +91,22 @@ export const masterDataService = {
     const response = await api.delete(`/admin/courses/${id}`);
     return response.data;
   },
+  exportCourses: async () => {
+    const response = await api.get('/admin/courses/export', { responseType: 'blob' });
+    return response.data;
+  },
+  importCourses: async (formData) => {
+    const response = await api.post('/admin/courses/import', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    });
+    return response.data;
+  },
+  downloadCourseTemplate: async () => {
+    const response = await api.get('/admin/courses/template', { responseType: 'blob' });
+    return response.data;
+  },
 
   // Academic Years
   getAcademicYears: async () => {

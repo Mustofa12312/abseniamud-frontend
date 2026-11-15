@@ -18,6 +18,23 @@ export const scheduleService = {
     const response = await api.delete(`/admin/schedules/${id}`);
     return response.data;
   },
+  exportSchedules: async (academicYearId = null) => {
+    const url = academicYearId ? `/admin/schedules/export?academic_year_id=${academicYearId}` : '/admin/schedules/export';
+    const response = await api.get(url, { responseType: 'blob' });
+    return response.data;
+  },
+  importSchedules: async (formData) => {
+    const response = await api.post('/admin/schedules/import', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    });
+    return response.data;
+  },
+  downloadScheduleTemplate: async () => {
+    const response = await api.get('/admin/schedules/template', { responseType: 'blob' });
+    return response.data;
+  },
 
   // Positions
   getPositions: async () => {

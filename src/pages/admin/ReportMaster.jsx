@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { FileSpreadsheet, Calendar as CalendarIcon, Filter, Eye, Printer } from "lucide-react";
+import { FileSpreadsheet, Calendar as CalendarIcon, Filter, Eye, Printer, Download } from "lucide-react";
 import { Card } from "../../components/ui/Card";
 import { Badge } from "../../components/ui/Badge";
 import { Modal } from "../../components/ui/Modal";
@@ -64,7 +64,7 @@ export default function ReportMaster() {
     }
   };
 
-  const handleExportCSV = async () => {
+  const handleExport = async (format = "xlsx") => {
     if (reports.length === 0) {
       error("Tidak ada data untuk diekspor pada periode ini.");
       return;
@@ -72,7 +72,7 @@ export default function ReportMaster() {
 
     setExporting(true);
     try {
-      const blob = await adminService.exportReports(selectedMonth, selectedYear, roleFilter);
+      const blob = await adminService.exportReports(selectedMonth, selectedYear, roleFilter, format);
       if (blob.type && blob.type.includes("json")) {
         const text = await blob.text();
         const json = JSON.parse(text);
@@ -80,10 +80,14 @@ export default function ReportMaster() {
         return;
       }
 
-      const excelBlob = new Blob([blob], {
-        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-      });
-      const url = window.URL.createObjectURL(excelBlob);
+      const mimeType =
+        format === "csv"
+          ? "text/csv;charset=utf-8"
+          : "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+      const fileExt = format === "csv" ? "csv" : "xlsx";
+
+      const fileBlob = new Blob([blob], { type: mimeType });
+      const url = window.URL.createObjectURL(fileBlob);
       const link = document.createElement("a");
       link.href = url;
       const monthNames = [
@@ -93,7 +97,7 @@ export default function ReportMaster() {
       const categoryLabel = roleFilter === "all" ? "Semua" : roleFilter === "dosen" ? "Dosen" : "Tendik";
       const monthLabel =
         selectedMonth === "all" ? "TahunanPenuh" : monthNames[Number(selectedMonth) - 1] || selectedMonth;
-      link.setAttribute("download", `Laporan_Absensi_${categoryLabel}_${monthLabel}_${selectedYear}.xlsx`);
+      link.setAttribute("download", `Laporan_Absensi_${categoryLabel}_${monthLabel}_${selectedYear}.${fileExt}`);
       document.body.appendChild(link);
       link.click();
 
@@ -102,7 +106,7 @@ export default function ReportMaster() {
         window.URL.revokeObjectURL(url);
       }, 500);
 
-      success("File laporan Excel berhasil diunduh!");
+      success(`File laporan ${format.toUpperCase()} berhasil diunduh!`);
     } catch (err) {
       let msg = "Gagal mengekspor data laporan.";
       if (err.response?.data instanceof Blob) {
@@ -154,9 +158,13 @@ export default function ReportMaster() {
             <Button onClick={handleExportPDF} variant="outline">
               <Printer size={15} /> Cetak PDF Resmi
             </Button>
-            <Button onClick={handleExportCSV} isLoading={exporting}>
+            <Button onClick={() => handleExport("csv")} variant="outline" isLoading={exporting}>
+              {!exporting && <Download size={15} />}
+              Ekspor CSV
+            </Button>
+            <Button onClick={() => handleExport("xlsx")} isLoading={exporting}>
               {!exporting && <FileSpreadsheet size={15} />}
-              {exporting ? "Mengekspor..." : "Export Excel"}
+              {exporting ? "Mengekspor..." : "Ekspor Excel"}
             </Button>
           </>
         }
@@ -310,6 +318,7 @@ export default function ReportMaster() {
                 <TableHead>Check-In</TableHead>
                 <TableHead>Check-Out</TableHead>
                 <TableHead>Lokasi Masuk</TableHead>
+                <TableHead>Telemetri GPS</TableHead>
                 <TableHead>Status</TableHead>
               </TableRow>
             </TableHeader>
@@ -317,9 +326,42 @@ export default function ReportMaster() {
               {detailData.data.map((record) => (
                 <TableRow key={record.id}>
                   <TableCell className="font-medium">{record.date}</TableCell>
-                  <TableCell className="font-mono text-xs">{record.checkIn}</TableCell>
-                  <TableCell className="font-mono text-xs">{record.checkOut}</TableCell>
-                  <TableCell>{record.location}</TableCell>
+                  <TableCell className="font-mono text-xs">
+                    <div>{record.checkIn}</div>
+                    {record.check_in?.reason && (
+                      <div className="text-[10px] text-amber-600 truncate max-w-[120px]" title={record.check_in.reason}>
+                        {record.check_in.reason}
+                      </div>
+                    )}
+                  </TableCell>
+                  <TableCell className="font-mono text-xs">
+                    <div>{record.checkOut}</div>
+                    {record.check_out?.location && record.check_out.location !== '-' && (
+                      <div className="text-[10px] text-[#86868B]">{record.check_out.location}</div>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    <div className="text-xs font-medium">{record.location}</div>
+                    {record.ip_address && (
+                      <div className="text-[10px] font-mono text-[#86868B]">IP: {record.ip_address}</div>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    {record.distance != null ? (
+                      <div className="text-[11px] space-y-0.5">
+                        <span className="font-mono font-medium text-emerald-700 dark:text-emerald-400">
+                          {Math.round(record.distance)}m dari titik
+                        </span>
+                        {record.accuracy != null && (
+                          <div className="text-[10px] text-[#86868B]">
+                            Akurasi ±{Math.round(record.accuracy)}m
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <span className="text-[11px] text-[#86868B]">-</span>
+                    )}
+                  </TableCell>
                   <TableCell>
                     <Badge
                       variant={

@@ -9,6 +9,10 @@ export const featureService = {
     const res = await api.post('/leaves', data);
     return res.data;
   },
+  deleteLeave: async (id) => {
+    const res = await api.delete(`/leaves/${id}`);
+    return res.data;
+  },
   downloadLeaveDocument: async (id) => {
     return api.get(`/leaves/${id}/document`, { responseType: 'blob' });
   },
