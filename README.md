@@ -1,16 +1,57 @@
-# React + Vite
+# IAIMU Attendance Web SPA (React + Vite + Tailwind CSS)
+**Institut Agama Islam Miftahul Ulum Pamekasan**
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+Aplikasi Web SPA & Dashboard Admin Presensi IAIMU berbasis React 19, Vite 8, Tailwind CSS, dan Leaflet Map.
 
-Currently, two official plugins are available:
+---
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## 🌟 Fitur Utama
 
-## React Compiler
+1. **Dashboard & Monitoring**:
+   - Dashboard Super Admin, Admin Akademik, dan Admin Keuangan.
+   - Portal Dosen & Tendik (Jadwal Mengajar, Presensi Harian, Riwayat, Izin/Cuti, Koreksi).
+   - Monitoring Kehadiran Real-time & Telemetri GPS (jarak meter, akurasi, koordinat).
+2. **Master Data Komprehensif**:
+   - Master Ruangan (dengan Import & Ekspor CSV/Excel).
+   - Master Fakultas & Prodi (dengan Import & Ekspor CSV/Excel).
+   - Master Dosen & Tenaga Kependidikan (dengan Import & Ekspor CSV/Excel).
+   - Master Mata Kuliah (dengan Import & Ekspor CSV/Excel).
+   - Master Jadwal Perkuliahan (Plotting Senin–Minggu, bentrok validator, Import & Ekspor CSV/Excel).
+   - Master Tahun Akademik & Hari Libur Nasional/Kampus.
+3. **Pelaporan & Berita Acara**:
+   - Ekspor Laporan Presensi Excel (`.xlsx`) dan CSV (`.csv`).
+   - Format Cetak Lembar Berita Acara Rekapitulasi Presensi siap cetak resmi A4.
+4. **PWA & Responsif**:
+   - Dukungan Progressive Web App (Service Worker & Manifest).
+   - Desain responsif mobile, tablet, dan desktop dengan Apple Light / Dark mode.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+---
 
-## Expanding the Oxlint configuration
+## 🛠️ Instalasi & Menjalankan Lokal
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and Oxlint's TypeScript related rules in your project.
+```bash
+# 1. Masuk ke direktori
+cd iaimu-web
+
+# 2. Instal dependensi
+npm install
+
+# 3. Jalankan development server
+npm run dev
+# Aplikasi dapat diakses di http://localhost:5173
+
+# 4. Jalankan build produksi
+npm run build
+```
+
+---
+
+## 🧪 Pengujian & Linting
+
+```bash
+# Menjalankan unit tests
+npm run test
+
+# Menjalankan Oxlint linter
+npm run lint
+```

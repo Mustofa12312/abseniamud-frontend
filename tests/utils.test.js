@@ -25,9 +25,10 @@ describe("rbac utilities", () => {
   it("resolves explicit role string and legacy numeric role_id fallbacks", () => {
     assert.equal(resolveUserRole({ role: " admin_keuangan " }), "admin_keuangan");
     assert.equal(resolveUserRole({ role_id: 1 }), "super_admin");
-    assert.equal(resolveUserRole({ role_id: 2 }), "admin_akademik");
-    assert.equal(resolveUserRole({ role_id: 3 }), "dosen");
-    assert.equal(resolveUserRole({ role_id: 4 }), "admin_keuangan");
+    assert.equal(resolveUserRole({ role_id: 2 }), "dosen");
+    assert.equal(resolveUserRole({ role_id: 3 }), "tendik");
+    assert.equal(resolveUserRole({ role_id: 4 }), "admin_akademik");
+    assert.equal(resolveUserRole({ role_id: 5 }), "admin_keuangan");
     assert.equal(resolveUserRole({ role_id: 99 }), null);
     assert.equal(resolveUserRole(null), null);
   });
