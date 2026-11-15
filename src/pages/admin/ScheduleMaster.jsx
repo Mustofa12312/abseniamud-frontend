@@ -534,49 +534,6 @@ export default function ScheduleMaster() {
     }
   };
 
-  const handleExportCSV = async () => {
-    setExporting(true);
-    try {
-      const blob = await scheduleService.exportSchedules(activeAcademicYear?.id);
-      await assertNotJsonBlob(blob);
-      triggerBlobDownload(blob, `master_jadwal_${new Date().toISOString().slice(0, 10)}.csv`);
-      success("Data jadwal kuliah berhasil diekspor.");
-    } catch (err) {
-      error(err.message || "Gagal mengekspor data jadwal kuliah.");
-    } finally {
-      setExporting(false);
-    }
-  };
-
-  const handleDownloadTemplate = async () => {
-    try {
-      const blob = await scheduleService.downloadScheduleTemplate();
-      await assertNotJsonBlob(blob);
-      triggerBlobDownload(blob, "template_import_jadwal.csv");
-      success("Template import jadwal berhasil diunduh.");
-    } catch (err) {
-      error(err.message || "Gagal mengunduh template jadwal.");
-    }
-  };
-
-  const handleImport = async (file) => {
-    const formData = new FormData();
-    formData.append("file", file);
-    try {
-      const res = await scheduleService.importSchedules(formData);
-      if (res.success) {
-        success(res.message || "Import jadwal berhasil.");
-        await fetchData();
-        return true;
-      }
-      error(res.message || "Gagal mengimport data jadwal.");
-      return false;
-    } catch (err) {
-      error(err.response?.data?.message || "Gagal memproses berkas import.");
-      return false;
-    }
-  };
-
   const selectedCourseObj = courses.find((c) => String(c.id) === String(formData.course_id));
   const baseModalSemesters = activeAcademicYear?.term === "Ganjil" ? [1, 3, 5, 7] : [2, 4, 6, 8];
   const modalSemesterOptions = Array.from(
@@ -623,10 +580,20 @@ export default function ScheduleMaster() {
           </div>
         }
         actions={
-          <Button size="sm" onClick={() => handleOpenCreate()} disabled={!activeAcademicYear}>
-            <Plus className="w-4 h-4" />
-            Tambah Jadwal
-          </Button>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button size="sm" variant="outline" onClick={handleExportCSV} disabled={exporting}>
+              <Download className="w-4 h-4" />
+              <span className="hidden sm:inline">Ekspor CSV</span>
+            </Button>
+            <Button size="sm" variant="outline" onClick={() => setIsImportModalOpen(true)}>
+              <Upload className="w-4 h-4" />
+              <span className="hidden sm:inline">Import CSV/Excel</span>
+            </Button>
+            <Button size="sm" onClick={() => handleOpenCreate()} disabled={!activeAcademicYear}>
+              <Plus className="w-4 h-4" />
+              Tambah Jadwal
+            </Button>
+          </div>
         }
       />
 
