@@ -312,8 +312,13 @@ export default function UserMaster() {
                             variant="outline"
                             size="sm"
                             onClick={() => setResetTarget(u)}
-                            title="Reset Ikatan Perangkat HP"
-                            className="text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-800/60"
+                            title={u.device_bound ? "Reset Ikatan Perangkat HP" : "Pengguna belum mengikat perangkat"}
+                            disabled={!u.device_bound}
+                            className={
+                              u.device_bound
+                                ? "text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-800/60 hover:bg-amber-50 dark:hover:bg-amber-950/40"
+                                : "opacity-40 cursor-not-allowed text-slate-400 border-slate-200 dark:border-slate-800"
+                            }
                           >
                             <Smartphone size={13} /> Reset HP
                           </Button>
@@ -439,7 +444,7 @@ export default function UserMaster() {
       <Modal
         isOpen={Boolean(resetTarget)}
         onClose={() => setResetTarget(null)}
-        title="Reset Ikatan Perangkat?"
+        title="Reset Ikatan Perangkat HP?"
         size="sm"
         footer={
           <>
@@ -447,15 +452,34 @@ export default function UserMaster() {
               Batal
             </Button>
             <Button variant="danger" onClick={handleConfirmResetDevice}>
-              Reset Perangkat
+              Ya, Reset Perangkat
             </Button>
           </>
         }
       >
-        <p className="text-sm text-[#86868B] dark:text-slate-300 leading-relaxed">
-          Sesi aktif aplikasi Android milik <strong className="text-[#1D1D1F] dark:text-white">{resetTarget?.name}</strong>{" "}
-          akan dicabut sehingga pengguna dapat login dari perangkat HP baru.
-        </p>
+        <div className="space-y-3">
+          <p className="text-sm text-[#86868B] dark:text-slate-300 leading-relaxed">
+            Ikatan perangkat untuk akun <strong className="text-[#1D1D1F] dark:text-white">{resetTarget?.name}</strong>{" "}
+            (<span className="font-mono text-xs">{resetTarget?.email}</span>) akan dilepaskan dan sesi aktif mobile akan dicabut.
+          </p>
+          {resetTarget?.bound_device_name && (
+            <div className="rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200/80 dark:border-amber-800/50 p-3 text-xs text-amber-900 dark:text-amber-300 space-y-1">
+              <div className="flex items-center gap-1.5 font-semibold">
+                <Smartphone size={14} />
+                <span>Perangkat Terdaftar Saat Ini:</span>
+              </div>
+              <p className="font-medium">{resetTarget.bound_device_name}</p>
+              {resetTarget.bound_device_id && (
+                <p className="font-mono text-[11px] text-amber-700 dark:text-amber-400">
+                  ID: {resetTarget.bound_device_id}
+                </p>
+              )}
+            </div>
+          )}
+          <p className="text-xs text-[#86868B] dark:text-slate-400">
+            Setelah di-reset, pengguna dapat melakukan login perdana dari smartphone barunya.
+          </p>
+        </div>
       </Modal>
 
       {/* Confirm Delete Modal */}
