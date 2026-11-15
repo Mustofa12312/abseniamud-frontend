@@ -28,10 +28,26 @@ import {
   User,
   Search,
   X,
+  Upload,
+  Download,
+  FileSpreadsheet,
 } from "lucide-react";
 import { scheduleService } from "../../services/schedule";
 import { masterDataService } from "../../services/masterData";
 import { useToast } from "../../contexts/ToastContext";
+import { assertNotJsonBlob, triggerBlobDownload } from "../../utils/format";
+import { CsvImportModal } from "../../components/ui/CsvImportModal";
+
+const SCHEDULE_IMPORT_COLUMNS = [
+  { label: "Tahun Akademik", required: false, example: "2026-2027" },
+  { label: "Semester TA", required: false, example: "Ganjil" },
+  { label: "Kode MK", required: false, example: "IF101" },
+  { label: "Nama Mata Kuliah", required: true, example: "Algoritma & Pemrograman" },
+  { label: "Ruangan", required: true, example: "Ruang Teori 101" },
+  { label: "Hari", required: true, example: "Senin" },
+  { label: "Jam Mulai", required: true, example: "08:00" },
+  { label: "Jam Selesai", required: true, example: "09:40" },
+];
 
 const DAYS = ["Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu", "Minggu"];
 const JS_DAY_TO_ID = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
@@ -272,6 +288,8 @@ export default function ScheduleMaster() {
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [exporting, setExporting] = useState(false);
   const [editingSchedule, setEditingSchedule] = useState(null);
   const [deletingSchedule, setDeletingSchedule] = useState(null);
   const [submitting, setSubmitting] = useState(false);
@@ -456,6 +474,49 @@ export default function ScheduleMaster() {
     }
   };
 
+  const handleExportCSV = async () => {
+    setExporting(true);
+    try {
+      const blob = await scheduleService.exportSchedules(activeAcademicYear?.id);
+      await assertNotJsonBlob(blob);
+      triggerBlobDownload(blob, `master_jadwal_${new Date().toISOString().slice(0, 10)}.csv`);
+      success("Data jadwal kuliah berhasil diekspor.");
+    } catch (err) {
+      error(err.message || "Gagal mengekspor data jadwal kuliah.");
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  const handleDownloadTemplate = async () => {
+    try {
+      const blob = await scheduleService.downloadScheduleTemplate();
+      await assertNotJsonBlob(blob);
+      triggerBlobDownload(blob, "template_import_jadwal.csv");
+      success("Template import jadwal berhasil diunduh.");
+    } catch (err) {
+      error(err.message || "Gagal mengunduh template jadwal.");
+    }
+  };
+
+  const handleImport = async (file) => {
+    const formData = new FormData();
+    formData.append("file", file);
+    try {
+      const res = await scheduleService.importSchedules(formData);
+      if (res.success) {
+        success(res.message || "Import jadwal berhasil.");
+        await fetchData();
+        return true;
+      }
+      error(res.message || "Gagal mengimport data jadwal.");
+      return false;
+    } catch (err) {
+      error(err.response?.data?.message || "Gagal memproses berkas import.");
+      return false;
+    }
+  };
+
   const handleDelete = async () => {
     if (!deletingSchedule) return;
     setSubmitting(true);
@@ -470,6 +531,49 @@ export default function ScheduleMaster() {
       error(err?.response?.data?.message || "Gagal menghapus jadwal.");
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleExportCSV = async () => {
+    setExporting(true);
+    try {
+      const blob = await scheduleService.exportSchedules(activeAcademicYear?.id);
+      await assertNotJsonBlob(blob);
+      triggerBlobDownload(blob, `master_jadwal_${new Date().toISOString().slice(0, 10)}.csv`);
+      success("Data jadwal kuliah berhasil diekspor.");
+    } catch (err) {
+      error(err.message || "Gagal mengekspor data jadwal kuliah.");
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  const handleDownloadTemplate = async () => {
+    try {
+      const blob = await scheduleService.downloadScheduleTemplate();
+      await assertNotJsonBlob(blob);
+      triggerBlobDownload(blob, "template_import_jadwal.csv");
+      success("Template import jadwal berhasil diunduh.");
+    } catch (err) {
+      error(err.message || "Gagal mengunduh template jadwal.");
+    }
+  };
+
+  const handleImport = async (file) => {
+    const formData = new FormData();
+    formData.append("file", file);
+    try {
+      const res = await scheduleService.importSchedules(formData);
+      if (res.success) {
+        success(res.message || "Import jadwal berhasil.");
+        await fetchData();
+        return true;
+      }
+      error(res.message || "Gagal mengimport data jadwal.");
+      return false;
+    } catch (err) {
+      error(err.response?.data?.message || "Gagal memproses berkas import.");
+      return false;
     }
   };
 

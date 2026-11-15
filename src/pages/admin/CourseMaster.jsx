@@ -7,10 +7,34 @@ import { Badge } from "../../components/ui/Badge";
 import { Modal } from "../../components/ui/Modal";
 import { PageHeader } from "../../components/ui/PageHeader";
 import { EmptyState } from "../../components/ui/EmptyState";
-import { BookOpen, Plus, Edit2, Trash2, Search, X, AlertTriangle, User, Layers } from "lucide-react";
+import { CsvImportModal } from "../../components/ui/CsvImportModal";
+import {
+  BookOpen,
+  Plus,
+  Edit2,
+  Trash2,
+  Search,
+  X,
+  AlertTriangle,
+  User,
+  Layers,
+  Upload,
+  Download,
+  FileSpreadsheet,
+} from "lucide-react";
 import { masterDataService } from "../../services/masterData";
 import { lecturerService } from "../../services/lecturer";
 import { useToast } from "../../contexts/ToastContext";
+import { assertNotJsonBlob, triggerBlobDownload } from "../../utils/format";
+
+const COURSE_IMPORT_COLUMNS = [
+  { label: "Kode MK", required: false, example: "IF101" },
+  { label: "Nama Mata Kuliah", required: true, example: "Algoritma & Pemrograman" },
+  { label: "Fakultas / Prodi", required: false, example: "Teknik Informatika" },
+  { label: "Dosen Pengampu", required: false, example: "0701018501 / Nama Dosen" },
+  { label: "Semester", required: false, example: "1" },
+  { label: "SKS", required: false, example: "3" },
+];
 
 const selectStyles = {
   control: (base) => ({
@@ -37,6 +61,8 @@ export default function CourseMaster() {
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [exporting, setExporting] = useState(false);
   const [editingCourse, setEditingCourse] = useState(null);
   const [deletingCourse, setDeletingCourse] = useState(null);
   const [submitting, setSubmitting] = useState(false);
@@ -218,6 +244,49 @@ export default function CourseMaster() {
     }
   };
 
+  const handleExportCSV = async () => {
+    setExporting(true);
+    try {
+      const blob = await masterDataService.exportCourses();
+      await assertNotJsonBlob(blob);
+      triggerBlobDownload(blob, `master_mata_kuliah_${new Date().toISOString().slice(0, 10)}.csv`);
+      success("Data mata kuliah berhasil diekspor.");
+    } catch (err) {
+      error(err.message || "Gagal mengekspor data mata kuliah.");
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  const handleDownloadTemplate = async () => {
+    try {
+      const blob = await masterDataService.downloadCourseTemplate();
+      await assertNotJsonBlob(blob);
+      triggerBlobDownload(blob, "template_import_mata_kuliah.csv");
+      success("Template import mata kuliah berhasil diunduh.");
+    } catch (err) {
+      error(err.message || "Gagal mengunduh template mata kuliah.");
+    }
+  };
+
+  const handleImport = async (file) => {
+    const formData = new FormData();
+    formData.append("file", file);
+    try {
+      const res = await masterDataService.importCourses(formData);
+      if (res.success) {
+        success(res.message || "Import mata kuliah berhasil.");
+        fetchData();
+        return true;
+      }
+      error(res.message || "Gagal mengimport data mata kuliah.");
+      return false;
+    } catch (err) {
+      error(err.response?.data?.message || "Gagal memproses berkas import.");
+      return false;
+    }
+  };
+
   const selectedFacultyOption = formData.faculty_id
     ? faculties
         .filter((f) => String(f.id) === String(formData.faculty_id))
@@ -237,10 +306,20 @@ export default function CourseMaster() {
         description="Kelola daftar mata kuliah, bobot SKS, semester, dan dosen pengampu."
         badge={<Badge variant="default">{courses.length} Mata Kuliah</Badge>}
         actions={
-          <Button size="sm" onClick={handleOpenCreate}>
-            <Plus className="w-4 h-4" />
-            Tambah Mata Kuliah
-          </Button>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button size="sm" variant="outline" onClick={handleExportCSV} disabled={exporting}>
+              <Download className="w-4 h-4" />
+              <span className="hidden sm:inline">Ekspor CSV</span>
+            </Button>
+            <Button size="sm" variant="outline" onClick={() => setIsImportModalOpen(true)}>
+              <Upload className="w-4 h-4" />
+              <span className="hidden sm:inline">Import CSV/Excel</span>
+            </Button>
+            <Button size="sm" onClick={handleOpenCreate}>
+              <Plus className="w-4 h-4" />
+              Tambah Mata Kuliah
+            </Button>
+          </div>
         }
       />
 
@@ -553,6 +632,19 @@ export default function CourseMaster() {
           </div>
         </form>
       </Modal>
+
+      {/* Import CSV / Excel Modal */}
+      <CsvImportModal
+        isOpen={isImportModalOpen}
+        onClose={() => setIsImportModalOpen(false)}
+        title="Import Data Mata Kuliah"
+        subtitle="Unggah berkas CSV atau Excel untuk menambahkan data mata kuliah secara massal."
+        columns={COURSE_IMPORT_COLUMNS}
+        updateNote="Mata kuliah dengan kode sama akan diperbarui otomatis."
+        onDownloadTemplate={handleDownloadTemplate}
+        onImport={handleImport}
+        onInvalidFile={(msg) => error(msg)}
+      />
 
       {/* Delete Confirmation Modal */}
       <Modal

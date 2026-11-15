@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { CalendarDays, Clock, Send, FileText, Paperclip } from "lucide-react";
+import { CalendarDays, Clock, Send, FileText, Paperclip, Trash2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../../components/ui/Card";
 import { Button } from "../../components/ui/Button";
 import { Input } from "../../components/ui/Input";
@@ -15,6 +15,7 @@ export default function LecturerLeave() {
   const [leaves, setLeaves] = useState([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [cancellingId, setCancellingId] = useState(null);
   const [documentFile, setDocumentFile] = useState(null);
   const [formData, setFormData] = useState({
     type: "IZIN",
@@ -95,6 +96,26 @@ export default function LecturerLeave() {
         return <Badge variant="danger">Ditolak</Badge>;
       default:
         return <Badge>{status}</Badge>;
+    }
+  };
+
+  const handleCancelLeave = async (id) => {
+    if (!window.confirm("Apakah Anda yakin ingin membatalkan pengajuan izin ini?")) {
+      return;
+    }
+    setCancellingId(id);
+    try {
+      const res = await featureService.deleteLeave(id);
+      if (res.success) {
+        success("Pengajuan izin berhasil dibatalkan.");
+        setLeaves((prev) => prev.filter((item) => item.id !== id));
+      } else {
+        error(res.message || "Gagal membatalkan pengajuan.");
+      }
+    } catch (err) {
+      error(err.response?.data?.message || "Gagal membatalkan pengajuan izin.");
+    } finally {
+      setCancellingId(null);
     }
   };
 
@@ -255,7 +276,21 @@ export default function LecturerLeave() {
                           {item.created_at ? new Date(item.created_at).toLocaleDateString("id-ID") : "-"}
                         </p>
                       </div>
-                      <div className="shrink-0">{renderStatusBadge(item.status)}</div>
+                      <div className="shrink-0 flex items-center gap-2">
+                        {renderStatusBadge(item.status)}
+                        {item.status === "PENDING" && (
+                          <Button
+                            variant="danger"
+                            size="sm"
+                            className="text-xs h-7 px-2"
+                            onClick={() => handleCancelLeave(item.id)}
+                            disabled={cancellingId === item.id}
+                          >
+                            <Trash2 size={12} className="mr-1" />
+                            {cancellingId === item.id ? "Membatalkan..." : "Batalkan"}
+                          </Button>
+                        )}
+                      </div>
                     </div>
                   );
                 })}
