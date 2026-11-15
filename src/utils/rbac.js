@@ -16,12 +16,23 @@ export function resolveUserRole(user) {
   if (typeof user.role === 'string' && user.role.trim() !== '') {
     return user.role.trim();
   }
+  if (user.role && typeof user.role === 'object' && user.role.name) {
+    return String(user.role.name).trim();
+  }
 
   const roleId = parseInt(user.role_id, 10);
+  // Canonical database IDs (DatabaseSeeder):
+  // 1 = super_admin, 2 = dosen, 3 = tendik, 4 = admin_akademik, 5 = admin_keuangan
   if (roleId === 1) return 'super_admin';
-  if (roleId === 2) return 'admin_akademik';
-  if (roleId === 3) return 'dosen';
-  if (roleId === 4) return 'admin_keuangan';
+  if (roleId === 2) return 'dosen';
+  if (roleId === 3) return 'tendik';
+  if (roleId === 4) return 'admin_akademik';
+  if (roleId === 5) return 'admin_keuangan';
+
+  // Profile-based fallbacks if role relation was omitted
+  if (user.staff_profile || user.staffProfile) return 'tendik';
+  if (user.lecturer) return 'dosen';
+
   return null;
 }
 
