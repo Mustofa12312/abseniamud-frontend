@@ -1020,6 +1020,19 @@ export default function ScheduleMaster() {
         </form>
       </Modal>
 
+      {/* Import CSV / Excel Modal */}
+      <CsvImportModal
+        isOpen={isImportModalOpen}
+        onClose={() => setIsImportModalOpen(false)}
+        title="Import Data Jadwal Perkuliahan"
+        subtitle="Unggah berkas CSV atau Excel untuk menambahkan plotting jadwal kuliah secara massal."
+        columns={SCHEDULE_IMPORT_COLUMNS}
+        updateNote="Sistem otomatis memvalidasi bentrok dosen, ruangan, dan tahun akademik aktif."
+        onDownloadTemplate={handleDownloadTemplate}
+        onImport={handleImport}
+        onInvalidFile={(msg) => error(msg)}
+      />
+
       {/* Delete Confirmation Modal */}
       <Modal
         isOpen={isDeleteModalOpen}
